@@ -17,7 +17,9 @@
       "define": false,
       "endselect": true,
       "execSQL": true,
-      "kernelCall": true
+      "kernelCall": true,
+      "communication": true,
+      "statics": false
     },
     "breakpoint": {
       "enabled": true,
@@ -25,7 +27,8 @@
     },
     "check_variables": {
       "enabled": false,
-      "exclude": []
+      "exclude": ["zcl_abapgit_ecatt"],
+      "errorNamespace": "^(Z|Y)"
     },
     "class_attribute_names": {
       "enabled": true,
@@ -49,7 +52,7 @@
     "constructor_visibility_public": {
       "enabled": true,
       "exclude": []
-    },    
+    },
     "contains_tab": {
       "enabled": true,
       "exclude": []
@@ -63,22 +66,31 @@
       "exclude": []
     },
     "double_space": {
-      "enabled": true,
-      "exclude": []
+      "enabled": false,
+      "exclude": [],
+      "keywords": true,
+      "startParen": true,
+      "endParen": true
     },
     "empty_line_in_statement": {
       "enabled": true,
       "exclude": [],
       "allowChained": true
     },
-    "empty_loop": {
-      "enabled": true,
-      "exclude": [],
-      "length": 120
-    },
     "empty_statement": {
       "enabled": true,
       "exclude": []
+    },
+    "empty_structure": {
+      "enabled": true,
+      "exclude": [],
+      "loop": true,
+      "if": false,
+      "while": true,
+      "case": true,
+      "select": true,
+      "do": true,
+      "at": true
     },
     "exit_or_check": {
       "enabled": true,
@@ -104,6 +116,11 @@
     "if_in_if": {
       "enabled": true,
       "exclude": []
+    },
+    "in_statement_indentation": {
+      "enabled": false,
+      "exclude": [],
+      "ignoreExceptions": true
     },
     "indentation": {
       "enabled": true,
@@ -205,7 +222,7 @@
       "doma": "^Z",
       "msag": "^Z",
       "tran": "^Z",
-      "enqu": "^Z",
+      "enqu": "^EZ",
       "auth": "^Z",
       "pinf": "^Z"
     },
@@ -258,19 +275,29 @@
       "enabled": true,
       "exclude": []
     },
+    "space_before_dot": {
+      "enabled": true,
+      "exclude": [],
+      "ignoreGlobalDefinition": true,
+      "ignoreExceptions": true
+    },
     "start_at_tab": {
       "enabled": true,
       "exclude": []
     },
     "superclass_final": {
       "enabled": false,
-      "exclude": []
+      "exclude": ["zcl_abapgit_ecatt"]
     },
     "tabl_enhancement_category": {
       "enabled": true,
       "exclude": []
     },
     "unreachable_code": {
+      "enabled": true,
+      "exclude": []
+    },
+    "use_new": {
       "enabled": true,
       "exclude": []
     },

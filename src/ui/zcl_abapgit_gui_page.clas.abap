@@ -3,11 +3,14 @@ CLASS zcl_abapgit_gui_page DEFINITION PUBLIC ABSTRACT CREATE PUBLIC.
   PUBLIC SECTION.
     INTERFACES:
       zif_abapgit_gui_renderable,
-      zif_abapgit_gui_event_handler.
+      zif_abapgit_gui_event_handler,
+      zif_abapgit_gui_error_handler.
 
     CONSTANTS:
+      " You should remember that these actions are handled in the UI.
+      " Have a look at the JS file.
       BEGIN OF c_global_page_action,
-        showhotkeys TYPE string VALUE `showHotkeys` ##NO_TEXT,
+        showhotkeys         TYPE string VALUE `showHotkeys` ##NO_TEXT,
       END OF c_global_page_action.
 
     CLASS-METHODS:
@@ -36,8 +39,10 @@ CLASS zcl_abapgit_gui_page DEFINITION PUBLIC ABSTRACT CREATE PUBLIC.
       RAISING   zcx_abapgit_exception.
 
   PRIVATE SECTION.
-    DATA: mo_settings TYPE REF TO zcl_abapgit_settings,
-          mt_hotkeys  TYPE zif_abapgit_gui_page_hotkey=>tty_hotkey_with_name.
+    DATA: mo_settings         TYPE REF TO zcl_abapgit_settings,
+          mt_hotkeys          TYPE zif_abapgit_gui_page_hotkey=>tty_hotkey_with_name,
+          mx_error            TYPE REF TO zcx_abapgit_exception,
+          mo_exception_viewer TYPE REF TO zcl_abapgit_exception_viewer.
     METHODS html_head
       RETURNING VALUE(ro_html) TYPE REF TO zcl_abapgit_html.
 
@@ -79,40 +84,22 @@ CLASS zcl_abapgit_gui_page DEFINITION PUBLIC ABSTRACT CREATE PUBLIC.
         VALUE(rt_hotkeys) TYPE zif_abapgit_gui_page_hotkey=>tty_hotkey_with_name
       RAISING
         zcx_abapgit_exception.
+
     METHODS get_default_hotkeys
       RETURNING
         VALUE(rt_default_hotkeys) TYPE zif_abapgit_gui_page_hotkey=>tty_hotkey_with_name.
+
+    METHODS render_error_message_box
+      RETURNING
+        VALUE(ro_html) TYPE REF TO zcl_abapgit_html
+      RAISING
+        zcx_abapgit_exception.
 
 ENDCLASS.
 
 
 
-CLASS zcl_abapgit_gui_page IMPLEMENTATION.
-
-
-  METHOD insert_hotkeys_to_page.
-
-    DATA: lv_json TYPE string.
-
-    FIELD-SYMBOLS: <ls_hotkey> LIKE LINE OF mt_hotkeys.
-
-    lv_json = `{`.
-
-    LOOP AT mt_hotkeys ASSIGNING <ls_hotkey>.
-
-      IF sy-tabix > 1.
-        lv_json = lv_json && |,|.
-      ENDIF.
-
-      lv_json = lv_json && |  "{ <ls_hotkey>-hotkey }" : "{ <ls_hotkey>-action }" |.
-
-    ENDLOOP.
-
-    lv_json = lv_json && `}`.
-
-    io_html->add( |setKeyBindings({ lv_json });| ).
-
-  ENDMETHOD.
+CLASS ZCL_ABAPGIT_GUI_PAGE IMPLEMENTATION.
 
 
   METHOD call_browser.
@@ -146,6 +133,37 @@ CLASS zcl_abapgit_gui_page IMPLEMENTATION.
   ENDMETHOD.
 
 
+  METHOD define_hotkeys.
+
+    DATA: lo_settings             TYPE REF TO zcl_abapgit_settings,
+          lt_user_defined_hotkeys TYPE zif_abapgit_definitions=>tty_hotkey.
+
+    FIELD-SYMBOLS: <ls_hotkey>              TYPE zif_abapgit_gui_page_hotkey=>ty_hotkey_with_name,
+                   <ls_user_defined_hotkey> LIKE LINE OF lt_user_defined_hotkeys.
+
+    rt_hotkeys = get_default_hotkeys( ).
+
+    " Override default hotkeys with user defined
+    lo_settings = zcl_abapgit_persist_settings=>get_instance( )->read( ).
+    lt_user_defined_hotkeys = lo_settings->get_hotkeys( ).
+
+    LOOP AT rt_hotkeys ASSIGNING <ls_hotkey>.
+
+      READ TABLE lt_user_defined_hotkeys ASSIGNING <ls_user_defined_hotkey>
+                                         WITH TABLE KEY action
+                                         COMPONENTS action = <ls_hotkey>-action.
+      IF sy-subrc = 0.
+        <ls_hotkey>-hotkey = <ls_user_defined_hotkey>-hotkey.
+      ELSEIF lines( lt_user_defined_hotkeys ) > 0.
+        " User removed the hotkey
+        DELETE TABLE rt_hotkeys FROM <ls_hotkey>.
+      ENDIF.
+
+    ENDLOOP.
+
+  ENDMETHOD.
+
+
   METHOD footer.
 
     CREATE OBJECT ro_html.
@@ -165,14 +183,34 @@ CLASS zcl_abapgit_gui_page IMPLEMENTATION.
   ENDMETHOD.
 
 
+  METHOD get_default_hotkeys.
+
+    DATA: lt_page_hotkeys LIKE mt_hotkeys.
+
+    rt_default_hotkeys = get_global_hotkeys( ).
+
+    TRY.
+        CALL METHOD me->('ZIF_ABAPGIT_GUI_PAGE_HOTKEY~GET_HOTKEY_ACTIONS')
+          RECEIVING
+            rt_hotkey_actions = lt_page_hotkeys.
+
+        INSERT LINES OF lt_page_hotkeys INTO TABLE rt_default_hotkeys.
+
+      CATCH cx_root.
+        " Current page doesn't implement hotkey interface, do nothing
+    ENDTRY.
+
+  ENDMETHOD.
+
+
   METHOD get_global_hotkeys.
 
     " these are the global shortcuts active on all pages
 
     DATA: ls_hotkey_action LIKE LINE OF rt_hotkey.
 
-    ls_hotkey_action-name           = |Show hotkeys help|.
-    ls_hotkey_action-action         = c_global_page_action-showhotkeys.
+    ls_hotkey_action-name   = |Show hotkeys help|.
+    ls_hotkey_action-action = c_global_page_action-showhotkeys.
     ls_hotkey_action-hotkey = |?|.
     INSERT ls_hotkey_action INTO TABLE rt_hotkey.
 
@@ -191,6 +229,16 @@ CLASS zcl_abapgit_gui_page IMPLEMENTATION.
     ro_html->add( '<title>abapGit</title>' ).               "#EC NOTEXT
     ro_html->add( '<link rel="stylesheet" type="text/css" href="css/common.css">' ).
     ro_html->add( '<link rel="stylesheet" type="text/css" href="css/ag-icons.css">' ).
+
+    " Themes
+    ro_html->add( '<link rel="stylesheet" type="text/css" href="css/theme-default.css">' ). " Theme basis
+    CASE mo_settings->get_ui_theme( ).
+      WHEN zcl_abapgit_settings=>c_ui_theme-dark.
+        ro_html->add( '<link rel="stylesheet" type="text/css" href="css/theme-dark.css">' ).
+      WHEN zcl_abapgit_settings=>c_ui_theme-belize.
+        ro_html->add( '<link rel="stylesheet" type="text/css" href="css/theme-belize-blue.css">' ).
+    ENDCASE.
+
     ro_html->add( '<script type="text/javascript" src="js/common.js"></script>' ). "#EC NOTEXT
 
     CASE mo_settings->get_icon_scaling( ). " Enforce icon scaling
@@ -205,18 +253,41 @@ CLASS zcl_abapgit_gui_page IMPLEMENTATION.
   ENDMETHOD.
 
 
+  METHOD insert_hotkeys_to_page.
+
+    DATA: lv_json TYPE string.
+
+    FIELD-SYMBOLS: <ls_hotkey> LIKE LINE OF mt_hotkeys.
+
+    lv_json = `{`.
+
+    LOOP AT mt_hotkeys ASSIGNING <ls_hotkey>.
+
+      IF sy-tabix > 1.
+        lv_json = lv_json && |,|.
+      ENDIF.
+
+      lv_json = lv_json && |  "{ <ls_hotkey>-hotkey }" : "{ <ls_hotkey>-action }" |.
+
+    ENDLOOP.
+
+    lv_json = lv_json && `}`.
+
+    io_html->add( |setKeyBindings({ lv_json });| ).
+
+  ENDMETHOD.
+
+
   METHOD link_hints.
 
     DATA: lv_link_hint_key    TYPE char01,
           lv_background_color TYPE string.
 
     lv_link_hint_key = mo_settings->get_link_hint_key( ).
-    lv_background_color = mo_settings->get_link_hint_background_color( ).
 
-    IF mo_settings->get_link_hints_enabled( ) = abap_true
-    AND lv_link_hint_key IS NOT INITIAL.
+    IF mo_settings->get_link_hints_enabled( ) = abap_true AND lv_link_hint_key IS NOT INITIAL.
 
-      io_html->add( |setLinkHints("{ lv_link_hint_key }","{ lv_background_color }");| ).
+      io_html->add( |activateLinkHints("{ lv_link_hint_key }");| ).
       io_html->add( |setInitialFocusWithQuerySelector('a span', true);| ).
       io_html->add( |enableArrowListNavigation();| ).
 
@@ -236,6 +307,35 @@ CLASS zcl_abapgit_gui_page IMPLEMENTATION.
                   ms_control-redirect_url }">| ).           "#EC NOTEXT
     ro_html->add( '</head>' ).                              "#EC NOTEXT
     ro_html->add( '</html>' ).                              "#EC NOTEXT
+
+  ENDMETHOD.
+
+
+  METHOD render_error_message_box.
+
+    " You should remember that the we have to instantiate ro_html even
+    " it's overwritten further down. Because ADD checks whether it's
+    " bound.
+    CREATE OBJECT ro_html.
+
+    " You should remember that we render the message panel only
+    " if we have an error.
+    IF mx_error IS NOT BOUND.
+      RETURN.
+    ENDIF.
+
+    ro_html = zcl_abapgit_gui_chunk_lib=>render_error_message_box( mx_error ).
+
+    " You should remember that the exception viewer dispatches the events of
+    " error message panel
+    CREATE OBJECT mo_exception_viewer
+      EXPORTING
+        ix_error = mx_error.
+
+    " You should remember that we render the message panel just once
+    " for each exception/error text.
+    CLEAR:
+      mx_error.
 
   ENDMETHOD.
 
@@ -286,12 +386,41 @@ CLASS zcl_abapgit_gui_page IMPLEMENTATION.
   ENDMETHOD.
 
 
+  METHOD zif_abapgit_gui_error_handler~handle_error.
+
+    mx_error = ix_error.
+    rv_handled = abap_true.
+
+  ENDMETHOD.
+
+
   METHOD zif_abapgit_gui_event_handler~on_event.
 
     CASE iv_action.
       WHEN zif_abapgit_definitions=>c_action-url.
 
         call_browser( iv_getdata ).
+        ev_state = zcl_abapgit_gui=>c_event_state-no_more_act.
+
+      WHEN  zif_abapgit_definitions=>c_action-goto_source.
+
+        IF mo_exception_viewer IS BOUND.
+          mo_exception_viewer->goto_source( ).
+        ENDIF.
+        ev_state = zcl_abapgit_gui=>c_event_state-no_more_act.
+
+      WHEN  zif_abapgit_definitions=>c_action-show_callstack.
+
+        IF mo_exception_viewer IS BOUND.
+          mo_exception_viewer->show_callstack( ).
+        ENDIF.
+        ev_state = zcl_abapgit_gui=>c_event_state-no_more_act.
+
+      WHEN zif_abapgit_definitions=>c_action-goto_message.
+
+        IF mo_exception_viewer IS BOUND.
+          mo_exception_viewer->goto_message( ).
+        ENDIF.
         ev_state = zcl_abapgit_gui=>c_event_state-no_more_act.
 
       WHEN OTHERS.
@@ -305,7 +434,7 @@ CLASS zcl_abapgit_gui_page IMPLEMENTATION.
 
   METHOD zif_abapgit_gui_renderable~render.
 
-    DATA lo_script TYPE REF TO zcl_abapgit_html.
+    DATA: lo_script TYPE REF TO zcl_abapgit_html.
 
     " Redirect
     IF ms_control-redirect_url IS NOT INITIAL.
@@ -325,6 +454,7 @@ CLASS zcl_abapgit_gui_page IMPLEMENTATION.
     ro_html->add( title( ) ).
     ro_html->add( render_hotkey_overview( ) ).
     ro_html->add( render_content( ) ).
+    ro_html->add( render_error_message_box( ) ).
     ro_html->add( footer( ) ).
     ro_html->add( '</body>' ).                              "#EC NOTEXT
 
@@ -340,56 +470,4 @@ CLASS zcl_abapgit_gui_page IMPLEMENTATION.
     ro_html->add( '</html>' ).                              "#EC NOTEXT
 
   ENDMETHOD.
-
-
-  METHOD define_hotkeys.
-
-    DATA: lo_settings             TYPE REF TO zcl_abapgit_settings,
-          lt_user_defined_hotkeys TYPE zif_abapgit_definitions=>tty_hotkey.
-
-    FIELD-SYMBOLS: <ls_hotkey>              TYPE zif_abapgit_gui_page_hotkey=>ty_hotkey_with_name,
-                   <ls_user_defined_hotkey> LIKE LINE OF lt_user_defined_hotkeys.
-
-    rt_hotkeys = get_default_hotkeys( ).
-
-    " Override default hotkeys with user defined
-    lo_settings = zcl_abapgit_persist_settings=>get_instance( )->read( ).
-    lt_user_defined_hotkeys = lo_settings->get_hotkeys( ).
-
-    LOOP AT rt_hotkeys ASSIGNING <ls_hotkey>.
-
-      READ TABLE lt_user_defined_hotkeys ASSIGNING <ls_user_defined_hotkey>
-                                         WITH TABLE KEY action
-                                         COMPONENTS action = <ls_hotkey>-action.
-      IF sy-subrc = 0.
-        <ls_hotkey>-hotkey = <ls_user_defined_hotkey>-hotkey.
-      ELSEIF lines( lt_user_defined_hotkeys ) > 0.
-        " User removed the hotkey
-        DELETE TABLE rt_hotkeys FROM <ls_hotkey>.
-      ENDIF.
-
-    ENDLOOP.
-
-  ENDMETHOD.
-
-
-  METHOD get_default_hotkeys.
-
-    DATA: lt_page_hotkeys LIKE mt_hotkeys.
-
-    rt_default_hotkeys = get_global_hotkeys( ).
-
-    TRY.
-        CALL METHOD me->('ZIF_ABAPGIT_GUI_PAGE_HOTKEY~GET_HOTKEY_ACTIONS')
-          RECEIVING
-            rt_hotkey_actions = lt_page_hotkeys.
-
-        INSERT LINES OF lt_page_hotkeys INTO TABLE rt_default_hotkeys.
-
-      CATCH cx_root.
-        " Current page doesn't implement hotkey interface, do nothing
-    ENDTRY.
-
-  ENDMETHOD.
-
 ENDCLASS.

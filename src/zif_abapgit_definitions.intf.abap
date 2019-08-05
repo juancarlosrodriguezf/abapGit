@@ -244,7 +244,7 @@ INTERFACE zif_abapgit_definitions
       email      TYPE string,
       time       TYPE string,
       message    TYPE string,
-      body       TYPE stringtab,
+      body       TYPE string_table,
       branch     TYPE string,
       merge      TYPE string,
       tags       TYPE stringtab,
@@ -335,11 +335,11 @@ INTERFACE zif_abapgit_definitions
       adt_jump_enabled           TYPE abap_bool,
       show_default_repo          TYPE abap_bool,
       link_hints_enabled         TYPE abap_bool,
-      link_hint_key              TYPE char01,
-      link_hint_background_color TYPE string,
+      link_hint_key              TYPE c LENGTH 1,
       hotkeys                    TYPE tty_hotkey,
       parallel_proc_disabled     TYPE abap_bool,
       icon_scaling               TYPE c LENGTH 1,
+      ui_theme                   TYPE string,
     END OF ty_s_user_settings .
   TYPES:
     tty_dokil TYPE STANDARD TABLE OF dokil
@@ -407,6 +407,7 @@ INTERFACE zif_abapgit_definitions
       repo_syntax_check        TYPE string VALUE 'repo_syntax_check',
       repo_code_inspector      TYPE string VALUE 'repo_code_inspector',
       repo_open_in_master_lang TYPE string VALUE 'repo_open_in_master_lang',
+      repo_log                 TYPE string VALUE 'repo_log',
       abapgit_home             TYPE string VALUE 'abapgit_home',
       abapgit_install          TYPE string VALUE 'abapgit_install',
       zip_import               TYPE string VALUE 'zip_import',
@@ -442,9 +443,11 @@ INTERFACE zif_abapgit_definitions
       go_tutorial              TYPE string VALUE 'go_tutorial',
       go_patch                 TYPE string VALUE 'go_patch',
       jump                     TYPE string VALUE 'jump',
-      jump_pkg                 TYPE string VALUE 'jump_pkg',
       jump_transport           TYPE string VALUE 'jump_transport',
       url                      TYPE string VALUE 'url',
+      goto_source              TYPE string VALUE 'goto_source',
+      show_callstack           TYPE string VALUE 'show_callstack',
+      goto_message             TYPE string VALUE 'goto_message',
     END OF c_action .
   CONSTANTS c_tag_prefix TYPE string VALUE 'refs/tags/' ##NO_TEXT.
   CONSTANTS c_spagpa_param_repo_key TYPE char20 VALUE 'REPO_KEY' ##NO_TEXT.
