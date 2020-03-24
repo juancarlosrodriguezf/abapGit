@@ -35,6 +35,8 @@ CLASS zcl_abapgit_zip DEFINITION
       RAISING   zcx_abapgit_exception.
 
   PROTECTED SECTION.
+
+    CLASS-DATA gv_prev TYPE string .
   PRIVATE SECTION.
 
     CLASS-METHODS encode_files
@@ -128,15 +130,16 @@ CLASS ZCL_ABAPGIT_ZIP IMPLEMENTATION.
           lv_sep        TYPE c LENGTH 1,
           ls_files_item TYPE zcl_abapgit_objects=>ty_serialization.
 
-    STATICS: sv_prev TYPE string.
-
     FIELD-SYMBOLS: <ls_file> LIKE LINE OF ls_files_item-files.
 
+    WHILE ls_tadir IS INITIAL.
 
-    ls_tadir = zcl_abapgit_ui_factory=>get_popups( )->popup_object( ).
-    IF ls_tadir IS INITIAL.
-      RAISE EXCEPTION TYPE zcx_abapgit_cancel.
-    ENDIF.
+      ls_tadir = zcl_abapgit_ui_factory=>get_popups( )->popup_object( ).
+      IF ls_tadir IS INITIAL.
+        MESSAGE 'Object couldn''t be found' TYPE 'S' DISPLAY LIKE 'E'.
+      ENDIF.
+
+    ENDWHILE.
 
     ls_files_item-item-obj_type = ls_tadir-object.
     ls_files_item-item-obj_name = ls_tadir-obj_name.
@@ -151,18 +154,16 @@ CLASS ZCL_ABAPGIT_ZIP IMPLEMENTATION.
 
     cl_gui_frontend_services=>directory_browse(
       EXPORTING
-        initial_folder  = sv_prev
+        initial_folder  = gv_prev
       CHANGING
         selected_folder = lv_folder ).
     IF lv_folder IS INITIAL.
       RETURN.
     ENDIF.
 
-    sv_prev = lv_folder.
+    gv_prev = lv_folder.
 
-    cl_gui_frontend_services=>get_file_separator(
-      CHANGING
-        file_separator = lv_sep ).
+    cl_gui_frontend_services=>get_file_separator( CHANGING file_separator = lv_sep ).
 
     LOOP AT ls_files_item-files ASSIGNING <ls_file>.
       CONCATENATE lv_folder lv_sep <ls_file>-filename INTO lv_fullpath.
@@ -181,6 +182,7 @@ CLASS ZCL_ABAPGIT_ZIP IMPLEMENTATION.
           ls_data   TYPE zif_abapgit_persistence=>ty_repo,
           li_popups TYPE REF TO zif_abapgit_popups.
 
+    DATA lv_serialize_master_lang_only TYPE abap_bool.
 
     ls_data-key = 'DUMMY'.
     ls_data-dot_abapgit = zcl_abapgit_dot_abapgit=>build_default( )->get_data( ).
@@ -189,10 +191,13 @@ CLASS ZCL_ABAPGIT_ZIP IMPLEMENTATION.
     li_popups->popup_package_export(
       IMPORTING
         ev_package      = ls_data-package
-        ev_folder_logic = ls_data-dot_abapgit-folder_logic ).
+        ev_folder_logic = ls_data-dot_abapgit-folder_logic
+        ev_serialize_master_lang_only = lv_serialize_master_lang_only ).
     IF ls_data-package IS INITIAL.
       RAISE EXCEPTION TYPE zcx_abapgit_cancel.
     ENDIF.
+
+    ls_data-local_settings-serialize_master_lang_only = lv_serialize_master_lang_only.
 
     CREATE OBJECT lo_repo
       EXPORTING

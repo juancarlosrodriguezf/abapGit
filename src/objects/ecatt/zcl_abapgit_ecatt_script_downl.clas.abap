@@ -98,7 +98,7 @@ CLASS ZCL_ABAPGIT_ECATT_SCRIPT_DOWNL IMPLEMENTATION.
               set_deep_stru_to_dom( ecatt_script->params ).
               set_deep_data_to_dom( ecatt_script->params ).
               IF wa_parm-xmlref_typ = cl_apl_ecatt_const=>ref_type_c_tcd.
-                set_control_data_for_tcd( is_param  =  wa_parm
+                set_control_data_for_tcd( is_param  = wa_parm
                                           io_params = ecatt_script->params ).
 
               ENDIF.
@@ -144,8 +144,7 @@ CLASS ZCL_ABAPGIT_ECATT_SCRIPT_DOWNL IMPLEMENTATION.
           li_elem     TYPE REF TO if_ixml_element.
 
     li_vars = ii_element->find_from_name_ns( iv_tabname ).
-    li_filter = ii_element->create_filter_node_type(
-    if_ixml_node=>co_node_text ).
+    li_filter = ii_element->create_filter_node_type( if_ixml_node=>co_node_text ).
     IF li_vars IS NOT INITIAL.
       li_abapctrl = ii_element->get_elements_by_tag_name_ns( iv_node ).
 
@@ -272,8 +271,7 @@ CLASS ZCL_ABAPGIT_ECATT_SCRIPT_DOWNL IMPLEMENTATION.
 
     FIELD-SYMBOLS: <lt_tab> TYPE STANDARD TABLE.
 
-    IF is_param-xmlref_typ <> cl_apl_ecatt_const=>ref_type_c_tcd
-      OR  io_params IS INITIAL.
+    IF is_param-xmlref_typ <> cl_apl_ecatt_const=>ref_type_c_tcd OR io_params IS INITIAL.
       RETURN.
     ENDIF.
 
@@ -405,9 +403,7 @@ CLASS ZCL_ABAPGIT_ECATT_SCRIPT_DOWNL IMPLEMENTATION.
       li_element TYPE REF TO if_ixml_element,
       lv_rc      TYPE sy-subrc.
 
-    ecatt_script->get_script_text(
-      CHANGING
-        scripttext = lt_text ).
+    ecatt_script->get_script_text( CHANGING scripttext = lt_text ).
 
     mi_script_node = template_over_all->create_simple_element(
                         name = 'SCRIPT'

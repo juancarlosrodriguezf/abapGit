@@ -158,11 +158,6 @@ CLASS zcl_abapgit_repo DEFINITION
         !is_change_mask TYPE zif_abapgit_persistence=>ty_repo_meta_mask
       RAISING
         zcx_abapgit_exception .
-    METHODS apply_filter
-      IMPORTING
-        !it_filter TYPE zif_abapgit_definitions=>ty_tadir_tt
-      CHANGING
-        !ct_tadir  TYPE zif_abapgit_definitions=>ty_tadir_tt .
     METHODS build_dotabapgit_file
       RETURNING
         VALUE(rs_file) TYPE zif_abapgit_definitions=>ty_file
@@ -180,36 +175,7 @@ ENDCLASS.
 
 
 
-CLASS ZCL_ABAPGIT_REPO IMPLEMENTATION.
-
-
-  METHOD apply_filter.
-
-    DATA: lt_filter TYPE SORTED TABLE OF zif_abapgit_definitions=>ty_tadir
-                      WITH NON-UNIQUE KEY object obj_name,
-          lv_index  TYPE i.
-
-    FIELD-SYMBOLS: <ls_tadir> LIKE LINE OF ct_tadir.
-
-
-    IF lines( it_filter ) = 0.
-      RETURN.
-    ENDIF.
-
-    lt_filter = it_filter.
-
-* this is another loop at TADIR, but typically the filter is blank
-    LOOP AT ct_tadir ASSIGNING <ls_tadir>.
-      lv_index = sy-tabix.
-      READ TABLE lt_filter TRANSPORTING NO FIELDS WITH KEY object = <ls_tadir>-object
-                                                           obj_name = <ls_tadir>-obj_name
-                                                  BINARY SEARCH.
-      IF sy-subrc <> 0.
-        DELETE ct_tadir INDEX lv_index.
-      ENDIF.
-    ENDLOOP.
-
-  ENDMETHOD.
+CLASS zcl_abapgit_repo IMPLEMENTATION.
 
 
   METHOD bind_listener.
@@ -341,8 +307,7 @@ CLASS ZCL_ABAPGIT_REPO IMPLEMENTATION.
     rs_checks = zcl_abapgit_objects=>deserialize_checks( me ).
 
     lt_requirements = get_dot_abapgit( )->get_data( )-requirements.
-    rs_checks-requirements-met = zcl_abapgit_requirement_helper=>is_requirements_met(
-      lt_requirements ).
+    rs_checks-requirements-met = zcl_abapgit_requirement_helper=>is_requirements_met( lt_requirements ).
 
   ENDMETHOD.
 
@@ -359,6 +324,7 @@ CLASS ZCL_ABAPGIT_REPO IMPLEMENTATION.
     IF sy-subrc = 0.
       ro_dot = zcl_abapgit_dot_abapgit=>deserialize( <ls_remote>-data ).
       set_dot_abapgit( ro_dot ).
+      COMMIT WORK AND WAIT. " to release lock
     ENDIF.
 
   ENDMETHOD.
@@ -373,9 +339,11 @@ CLASS ZCL_ABAPGIT_REPO IMPLEMENTATION.
 
   METHOD get_files_local.
 
-    DATA: lt_tadir      TYPE zif_abapgit_definitions=>ty_tadir_tt,
+    DATA: lo_filter     TYPE REF TO zcl_abapgit_repo_filter,
+          lt_tadir      TYPE zif_abapgit_definitions=>ty_tadir_tt,
           lo_serialize  TYPE REF TO zcl_abapgit_serialize,
           lt_found      LIKE rt_files,
+          lv_force      TYPE abap_bool,
           ls_apack_file TYPE zif_abapgit_definitions=>ty_file.
 
     FIELD-SYMBOLS: <ls_return> LIKE LINE OF rt_files.
@@ -403,15 +371,27 @@ CLASS ZCL_ABAPGIT_REPO IMPLEMENTATION.
       io_dot                = get_dot_abapgit( )
       ii_log                = ii_log ).
 
-    apply_filter( EXPORTING it_filter = it_filter
-                  CHANGING ct_tadir  = lt_tadir ).
+    CREATE OBJECT lo_filter
+      EXPORTING
+        iv_package = get_package( ).
 
-    CREATE OBJECT lo_serialize.
+    lo_filter->apply( EXPORTING it_filter = it_filter
+                      CHANGING  ct_tadir  = lt_tadir ).
+
+    CREATE OBJECT lo_serialize
+      EXPORTING
+        iv_serialize_master_lang_only = ms_data-local_settings-serialize_master_lang_only.
+
+* if there are less than 10 objects run in single thread
+* this helps a lot when debugging, plus performance gain
+* with low number of objects does not matter much
+    lv_force = boolc( lines( lt_tadir ) < 10 ).
 
     lt_found = lo_serialize->serialize(
-      it_tadir    = lt_tadir
-      iv_language = get_dot_abapgit( )->get_master_language( )
-      ii_log      = ii_log ).
+      it_tadir            = lt_tadir
+      iv_language         = get_dot_abapgit( )->get_master_language( )
+      ii_log              = ii_log
+      iv_force_sequential = lv_force ).
     APPEND LINES OF lt_found TO rt_files.
 
     mt_local                 = rt_files.
@@ -506,8 +486,8 @@ CLASS ZCL_ABAPGIT_REPO IMPLEMENTATION.
 
     DELETE lt_local " Remove non-code related files except .abapgit
       WHERE item IS INITIAL
-      AND NOT ( file-path     = zif_abapgit_definitions=>c_root_dir
-      AND       file-filename = zif_abapgit_definitions=>c_dot_abapgit ).
+      AND NOT ( file-path = zif_abapgit_definitions=>c_root_dir
+      AND file-filename = zif_abapgit_definitions=>c_dot_abapgit ).
     SORT lt_local BY item.
 
     LOOP AT lt_local ASSIGNING <ls_local>.
@@ -768,4 +748,6 @@ CLASS ZCL_ABAPGIT_REPO IMPLEMENTATION.
     set( it_checksums = lt_checksums ).
 
   ENDMETHOD.
+
+
 ENDCLASS.

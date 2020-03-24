@@ -198,7 +198,7 @@ CLASS ZCL_ABAPGIT_OBJECT_INTF IMPLEMENTATION.
       INTO TABLE lt_reposrc
       FOR ALL ENTRIES IN lt_includes
       WHERE progname = lt_includes-programm
-      AND   r3state = 'A'.
+      AND r3state = 'A'.
     IF sy-subrc <> 0.
       rv_user = c_user_unknown.
     ELSE.
@@ -330,11 +330,11 @@ CLASS ZCL_ABAPGIT_OBJECT_INTF IMPLEMENTATION.
     CALL FUNCTION 'SEO_BUFFER_REFRESH'
       EXPORTING
         version = seoc_version_active
-        force   = seox_true.
+        force   = abap_true.
     CALL FUNCTION 'SEO_BUFFER_REFRESH'
       EXPORTING
         version = seoc_version_inactive
-        force   = seox_true.
+        force   = abap_true.
 
     lt_source = mi_object_oriented_object_fct->serialize_abap( ls_interface_key ).
 

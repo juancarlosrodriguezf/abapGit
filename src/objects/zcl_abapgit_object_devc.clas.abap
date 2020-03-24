@@ -72,9 +72,9 @@ CLASS ZCL_ABAPGIT_OBJECT_DEVC IMPLEMENTATION.
     SELECT SINGLE obj_name
            FROM tadir
            INTO lv_object_name
-           WHERE pgmid    =  'R3TR'
-           AND   NOT ( object = 'DEVC' AND obj_name = iv_package_name )
-           AND   devclass = iv_package_name.
+           WHERE pgmid = 'R3TR'
+           AND NOT ( object = 'DEVC' AND obj_name = iv_package_name )
+           AND devclass = iv_package_name.
     rv_is_empty = boolc( sy-subrc <> 0 ).
 
   ENDMETHOD.
@@ -447,11 +447,6 @@ CLASS ZCL_ABAPGIT_OBJECT_DEVC IMPLEMENTATION.
       IF sy-subrc <> 0.
         zcx_abapgit_exception=>raise_t100( ).
       ENDIF.
-
-*      " If the application component was cleared SET_ALL_ATTRIBUTES doesn't change it
-*      IF ls_package_data-component IS INITIAL AND li_package->application_component IS NOT INITIAL.
-*
-*      ENDIF.
 
     ELSE.
       " Package does not exist yet, create it

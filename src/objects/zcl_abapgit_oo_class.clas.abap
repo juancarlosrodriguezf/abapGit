@@ -118,7 +118,7 @@ CLASS ZCL_ABAPGIT_OO_CLASS IMPLEMENTATION.
 
     CALL FUNCTION 'SEO_METHOD_GENERATE_INCLUDE'
       EXPORTING
-        suppress_mtdkey_check          = seox_true
+        suppress_mtdkey_check          = abap_true
         mtdkey                         = ls_mtdkey
       EXCEPTIONS
         not_existing                   = 1
@@ -151,7 +151,7 @@ CLASS ZCL_ABAPGIT_OO_CLASS IMPLEMENTATION.
     CALL FUNCTION 'SEO_CLASS_GENERATE_CLASSPOOL'
       EXPORTING
         clskey                        = ls_clskey
-        suppress_corr                 = seox_true
+        suppress_corr                 = abap_true
       EXCEPTIONS
         not_existing                  = 1
         model_only                    = 2
@@ -252,19 +252,23 @@ CLASS ZCL_ABAPGIT_OO_CLASS IMPLEMENTATION.
 
     DATA: lo_update     TYPE REF TO cl_oo_class_section_source,
           ls_clskey     TYPE seoclskey,
-          lv_scan_error TYPE seox_boolean.
+          lv_scan_error TYPE abap_bool.
 
 
     ls_clskey-clsname = iv_name.
 
     TRY.
+        CALL FUNCTION 'SEO_BUFFER_REFRESH'
+          EXPORTING
+            cifkey  = ls_clskey
+            version = seoc_version_active.
         CREATE OBJECT lo_update TYPE ('CL_OO_CLASS_SECTION_SOURCE')
           EXPORTING
             clskey                        = ls_clskey
             exposure                      = iv_exposure
             state                         = 'A'
             source                        = it_source
-            suppress_constrctr_generation = seox_true
+            suppress_constrctr_generation = abap_true
           EXCEPTIONS
             class_not_existing            = 1
             read_source_error             = 2
@@ -286,7 +290,7 @@ CLASS ZCL_ABAPGIT_OO_CLASS IMPLEMENTATION.
       zcx_abapgit_exception=>raise( |Error instantiating CL_OO_CLASS_SECTION_SOURCE. Subrc = { sy-subrc }| ).
     ENDIF.
 
-    lo_update->set_dark_mode( seox_true ).
+    lo_update->set_dark_mode( abap_true ).
     TRY.
         CALL METHOD lo_update->('SET_AMDP_SUPPORT')
           EXPORTING
@@ -493,8 +497,8 @@ CLASS ZCL_ABAPGIT_OO_CLASS IMPLEMENTATION.
           lo_scanner TYPE REF TO cl_oo_source_scanner_class,
           lt_methods TYPE cl_oo_source_scanner_class=>type_method_implementations,
           lv_method  LIKE LINE OF lt_methods,
+          lt_public  TYPE seop_source_string,
           lt_source  TYPE seop_source_string.
-
 
     "Buffer needs to be refreshed,
     "otherwise standard SAP CLIF_SOURCE reorder methods alphabetically
@@ -509,15 +513,15 @@ CLASS ZCL_ABAPGIT_OO_CLASS IMPLEMENTATION.
       iv_name   = is_key-clsname ).
 
 * public
-    lt_source = lo_scanner->get_public_section_source( ).
-    IF lt_source IS NOT INITIAL.
+    lt_public = lo_scanner->get_public_section_source( ).
+    IF lt_public IS NOT INITIAL.
       lv_program = cl_oo_classname_service=>get_pubsec_name( is_key-clsname ).
       lv_updated = update_report( iv_program = lv_program
-                                  it_source  = lt_source ).
+                                  it_source  = lt_public ).
       IF lv_updated = abap_true.
         update_meta( iv_name     = is_key-clsname
                      iv_exposure = seoc_exposure_public
-                     it_source   = lt_source ).
+                     it_source   = lt_public ).
       ENDIF.
     ENDIF.
 
@@ -658,7 +662,6 @@ CLASS ZCL_ABAPGIT_OO_CLASS IMPLEMENTATION.
 
 * skip the CS include, as it is sometimes generated on the fly instead of
 * when the methods are changed
-*    APPEND cl_oo_classname_service=>get_cs_name( lv_class_name ) TO rt_includes.
 
     cl_oo_classname_service=>get_all_method_includes(
       EXPORTING
@@ -687,7 +690,7 @@ CLASS ZCL_ABAPGIT_OO_CLASS IMPLEMENTATION.
     INSERT TEXTPOOL lv_cp
       FROM it_text_pool
       LANGUAGE iv_language
-      STATE 'I'.
+      STATE iv_state.
     IF sy-subrc <> 0.
       zcx_abapgit_exception=>raise( 'error from INSERT TEXTPOOL' ).
     ENDIF.

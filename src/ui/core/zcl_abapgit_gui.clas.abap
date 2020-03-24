@@ -5,14 +5,14 @@ CLASS zcl_abapgit_gui DEFINITION
   PUBLIC SECTION.
     CONSTANTS:
       BEGIN OF c_event_state,
-        not_handled         VALUE 0,
-        re_render           VALUE 1,
-        new_page            VALUE 2,
-        go_back             VALUE 3,
-        no_more_act         VALUE 4,
-        new_page_w_bookmark VALUE 5,
-        go_back_to_bookmark VALUE 6,
-        new_page_replacing  VALUE 7,
+        not_handled         TYPE c LENGTH 1 VALUE '0',
+        re_render           TYPE c LENGTH 1 VALUE '1',
+        new_page            TYPE c LENGTH 1 VALUE '2',
+        go_back             TYPE c LENGTH 1 VALUE '3',
+        no_more_act         TYPE c LENGTH 1 VALUE '4',
+        new_page_w_bookmark TYPE c LENGTH 1 VALUE '5',
+        go_back_to_bookmark TYPE c LENGTH 1 VALUE '6',
+        new_page_replacing  TYPE c LENGTH 1 VALUE '7',
       END OF c_event_state .
 
     CONSTANTS:
@@ -30,7 +30,7 @@ CLASS zcl_abapgit_gui DEFINITION
 
     METHODS go_page
       IMPORTING
-        io_page        TYPE REF TO zif_abapgit_gui_renderable
+        ii_page        TYPE REF TO zif_abapgit_gui_renderable
         iv_clear_stack TYPE abap_bool DEFAULT abap_true
       RAISING
         zcx_abapgit_exception.
@@ -106,20 +106,17 @@ CLASS zcl_abapgit_gui DEFINITION
     METHODS handle_action
       IMPORTING
         iv_action      TYPE c
-        iv_frame       TYPE c OPTIONAL
         iv_getdata     TYPE c OPTIONAL
-        it_postdata    TYPE cnht_post_data_tab OPTIONAL
-        it_query_table TYPE cnht_query_table OPTIONAL.
+        it_postdata    TYPE cnht_post_data_tab OPTIONAL.
 
     METHODS handle_error
       IMPORTING
         ix_exception TYPE REF TO zcx_abapgit_exception.
-
 ENDCLASS.
 
 
 
-CLASS zcl_abapgit_gui IMPLEMENTATION.
+CLASS ZCL_ABAPGIT_GUI IMPLEMENTATION.
 
 
   METHOD back.
@@ -150,6 +147,45 @@ CLASS zcl_abapgit_gui IMPLEMENTATION.
 
     mi_cur_page = ls_stack-page. " last page always stays
     render( ).
+
+  ENDMETHOD.
+
+
+  METHOD cache_asset.
+
+    DATA: lv_xstr  TYPE xstring,
+          lt_xdata TYPE lvc_t_mime,
+          lv_size  TYPE int4.
+
+    ASSERT iv_text IS SUPPLIED OR iv_xdata IS SUPPLIED.
+
+    IF iv_text IS SUPPLIED. " String input
+      lv_xstr = zcl_abapgit_convert=>string_to_xstring( iv_text ).
+    ELSE. " Raw input
+      lv_xstr = iv_xdata.
+    ENDIF.
+
+    zcl_abapgit_convert=>xstring_to_bintab(
+      EXPORTING
+        iv_xstr   = lv_xstr
+      IMPORTING
+        ev_size   = lv_size
+        et_bintab = lt_xdata ).
+
+    mo_html_viewer->load_data(
+      EXPORTING
+        type         = iv_type
+        subtype      = iv_subtype
+        size         = lv_size
+        url          = iv_url
+      IMPORTING
+        assigned_url = rv_url
+      CHANGING
+        data_table   = lt_xdata
+      EXCEPTIONS
+        OTHERS       = 1 ) ##NO_TEXT.
+
+    ASSERT sy-subrc = 0. " Image data error
 
   ENDMETHOD.
 
@@ -243,7 +279,7 @@ CLASS zcl_abapgit_gui IMPLEMENTATION.
       CLEAR mt_stack.
     ENDIF.
 
-    mi_cur_page = io_page.
+    mi_cur_page = ii_page.
     render( ).
 
   ENDMETHOD.
@@ -314,14 +350,35 @@ CLASS zcl_abapgit_gui IMPLEMENTATION.
   ENDMETHOD.
 
 
+  METHOD handle_error.
+
+    DATA: li_gui_error_handler TYPE REF TO zif_abapgit_gui_error_handler,
+          lx_exception         TYPE REF TO cx_root.
+
+    TRY.
+        li_gui_error_handler ?= mi_cur_page.
+
+        IF li_gui_error_handler->handle_error( ix_exception ) = abap_true.
+          " We rerender the current page to display the error box
+          render( ).
+        ELSE.
+          MESSAGE ix_exception TYPE 'S' DISPLAY LIKE 'E'.
+        ENDIF.
+
+      CATCH zcx_abapgit_exception cx_sy_move_cast_error INTO lx_exception.
+        " In case of fire we just fallback to plain old message
+        MESSAGE lx_exception TYPE 'S' DISPLAY LIKE 'E'.
+    ENDTRY.
+
+  ENDMETHOD.
+
+
   METHOD on_event.
 
     handle_action(
-      iv_action      = action
-      iv_frame       = frame
-      iv_getdata     = getdata
-      it_postdata    = postdata
-      it_query_table = query_table ).
+      iv_action   = action
+      iv_getdata  = getdata
+      it_postdata = postdata ).
 
   ENDMETHOD.
 
@@ -330,8 +387,7 @@ CLASS zcl_abapgit_gui IMPLEMENTATION.
 
     DATA: lv_url           TYPE w3url,
           lv_html          TYPE string,
-          li_html          TYPE REF TO zif_abapgit_html,
-          lo_css_processor TYPE REF TO zcl_abapgit_gui_css_processor.
+          li_html          TYPE REF TO zif_abapgit_html.
 
     IF mi_cur_page IS NOT BOUND.
       zcx_abapgit_exception=>raise( 'GUI error: no current page' ).
@@ -383,66 +439,4 @@ CLASS zcl_abapgit_gui IMPLEMENTATION.
     SET HANDLER me->on_event FOR mo_html_viewer.
 
   ENDMETHOD.
-
-
-  METHOD cache_asset.
-
-    DATA: lv_xstr  TYPE xstring,
-          lt_xdata TYPE lvc_t_mime,
-          lv_size  TYPE int4.
-
-    ASSERT iv_text IS SUPPLIED OR iv_xdata IS SUPPLIED.
-
-    IF iv_text IS SUPPLIED. " String input
-      lv_xstr = zcl_abapgit_convert=>string_to_xstring( iv_text ).
-    ELSE. " Raw input
-      lv_xstr = iv_xdata.
-    ENDIF.
-
-    zcl_abapgit_convert=>xstring_to_bintab(
-      EXPORTING
-        iv_xstr   = lv_xstr
-      IMPORTING
-        ev_size   = lv_size
-        et_bintab = lt_xdata ).
-
-    mo_html_viewer->load_data(
-      EXPORTING
-        type         = iv_type
-        subtype      = iv_subtype
-        size         = lv_size
-        url          = iv_url
-      IMPORTING
-        assigned_url = rv_url
-      CHANGING
-        data_table   = lt_xdata
-      EXCEPTIONS
-        OTHERS       = 1 ) ##NO_TEXT.
-
-    ASSERT sy-subrc = 0. " Image data error
-
-  ENDMETHOD.
-
-  METHOD handle_error.
-
-    DATA: li_gui_error_handler TYPE REF TO zif_abapgit_gui_error_handler,
-          lx_exception         TYPE REF TO cx_root.
-
-    TRY.
-        li_gui_error_handler ?= mi_cur_page.
-
-        IF li_gui_error_handler->handle_error( ix_exception ) = abap_true.
-          " We rerender the current page to display the error box
-          render( ).
-        ELSE.
-          MESSAGE ix_exception TYPE 'S' DISPLAY LIKE 'E'.
-        ENDIF.
-
-      CATCH zcx_abapgit_exception cx_sy_move_cast_error INTO lx_exception.
-        " In case of fire we just fallback to plain old message
-        MESSAGE lx_exception TYPE 'S' DISPLAY LIKE 'E'.
-    ENDTRY.
-
-  ENDMETHOD.
-
 ENDCLASS.

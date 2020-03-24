@@ -484,7 +484,7 @@ CLASS ZCL_ABAPGIT_GIT_PORCELAIN IMPLEMENTATION.
         WHEN zcl_abapgit_stage=>c_method-rm.
           DELETE lt_expanded
             WHERE name = <ls_stage>-file-filename
-            AND   path = <ls_stage>-file-path.
+            AND path = <ls_stage>-file-path.
           ASSERT sy-subrc = 0.
 
           CLEAR <ls_updated>-sha1.       " Mark as deleted
@@ -576,7 +576,7 @@ CLASS ZCL_ABAPGIT_GIT_PORCELAIN IMPLEMENTATION.
                    <ls_blob> LIKE LINE OF it_blobs.
 
 
-    lv_time = zcl_abapgit_time=>get( ).
+    lv_time = zcl_abapgit_time=>get_unix( ).
 
     READ TABLE it_trees ASSIGNING <ls_tree> WITH KEY path = '/'.
     ASSERT sy-subrc = 0.

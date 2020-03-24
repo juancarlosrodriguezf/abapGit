@@ -36,6 +36,10 @@ input:focus, textarea:focus {
   border: 1px solid;
 }
 
+.cursor-pointer {
+  cursor: pointer;
+}
+
 /* MODIFIERS */
 .emphasis     { font-weight: bold !important; }
 .crossout     { text-decoration: line-through !important; }
@@ -167,6 +171,25 @@ div.repo {
   overflow: hidden;
 }
 
+
+/* STATE BLOCK COMMON*/
+span.state-block {
+  margin-left: 1em;
+  font-family: Consolas, Lucida Console, Courier, monospace;
+  font-size: x-small;
+  vertical-align: 13%;
+  display: inline-block;
+  text-align: center;
+  white-space: nowrap;
+}
+span.state-block span {
+  display: inline-block;
+  padding: 0px 3px;
+  border-width: 1px;
+  border-style: solid;
+}
+
+
 /* REPOSITORY TABLE*/
 div.repo_container {
   position: relative;
@@ -183,6 +206,13 @@ table.repo_tab {
   border: 1px solid;
   border-radius: 3px;
   width: 100%;
+  line-height: 1.5;
+}
+.repo_tab th {
+  text-align: left;
+  padding: 0.5em;
+  border-bottom: 1px solid;
+  font-weight: normal;
 }
 .repo_tab td {
   border-top: 1px solid;
@@ -201,41 +231,36 @@ table.repo_tab {
   text-align: left;
 }
 .repo_tab td.type {
-  width: 3em;
+  width: 4em;
+  padding-left: 0.5em;
 }
 .repo_tab td.object {
   padding-left: 0.5em;
 }
 .repo_tab td.files {
   padding-left: 0.5em;
+  line-height: 1.5;
 }
-.repo_tab td.cmd {
+.repo_tab td.cmd, .repo_tab th.cmd {
   text-align: right;
   padding-left: 0.5em;
   padding-right: 0.7em;
 }
+.repo_tab th.cmd .icon{
+  padding-right: 8px;
+}
 .repo_tab tr:first-child td { border-top: 0px; }
-.repo_tab td.cmd span.state-block {
-  margin-left: 1em;
-  font-family: Consolas, Lucida Console, Courier, monospace;
-  font-size: x-small;
-  vertical-align: 13%;
-  display: inline-block;
-  text-align: center;
-}
-.repo_tab td.cmd span.state-block span {
-  display: inline-block;
-  padding: 0px 2px;
-  border: 1px solid;
-}
 
 /* STAGE */
-div.stage-container { width: 850px; }
+
+th.stage-status { width: 30px; }
+th.stage-objtype { width: 30px; }
 input.stage-filter { width: 18em; }
 
 .stage_tab {
   border: 1px solid;
   margin-top: 0.2em;
+  line-height: 1.5;
 }
 .stage_tab td {
   border-top: 1px solid;
@@ -294,12 +319,21 @@ form.aligned-form span.cell { display: table-cell; }
 
 /* SETTINGS STYLES */
 div.settings_container {
-  padding: 0.5em;
+  padding: 0.5em 0.5em 1em;
   font-size: 10pt;
 }
 
 div.settings_section {
   margin-left:50px
+}
+
+table.settings td:first-child {
+  padding-left: 1em;
+  padding-right: 1em;
+}
+
+table.settings-package-requirements {
+  /*max-width: 300px;*/
 }
 
 /* DIFF */
@@ -339,14 +373,11 @@ div.diff_content tbody tr td{
 
 div.diff_head span.state-block {
   margin-left: 0.5em;
-  font-family: Consolas, Lucida Console, Courier, monospace;
-  display: inline-block;
-  text-align: center;
+  font-size: inherit;
+  vertical-align: initial;
 }
 div.diff_head span.state-block span {
-  display: inline-block;
   padding: 0px 4px;
-  border: 1px solid;
 }
 
 /* DIFF TABLE */
@@ -409,6 +440,58 @@ table.diff_tab td.code {
 
 table.diff_tab tbody tr:first-child td { padding-top: 0.5em; }
 table.diff_tab tbody tr:last-child td { padding-bottom: 0.5em; }
+
+table.diff_tab td.mark, th.mark {
+  width: 0.1%;
+  -ms-user-select: none;
+  user-select: none;
+  cursor: default;
+}
+
+.diff_select_left td.diff_right,
+.diff_select_left td.diff_right *,
+.diff_select_left th.diff_right,
+.diff_select_left th.diff_right *,
+.diff_select_right td.diff_left,
+.diff_select_right td.diff_left *,
+.diff_select_right th.diff_left,
+.diff_select_right th.diff_left * {
+  -ms-user-select: none;
+  user-select: none;
+  cursor: text;
+}
+
+.diff_select_left td.diff_left,
+.diff_select_left td.diff_left *,
+.diff_select_left th.diff_left,
+.diff_select_left th.diff_left *,
+.diff_select_right td.diff_right,
+.diff_select_right td.diff_right *,
+.diff_select_right th.diff_right,
+.diff_select_right th.diff_right * {
+  -ms-user-select: text;
+  user-select: text;
+}
+
+td.diff_others::selection,
+td.diff_others *::selection,
+th.diff_others::selection,
+th.diff_others *::selection {
+  background-color: transparent;
+  cursor: default;
+}
+
+.diff_select_left td.diff_right::selection,
+.diff_select_left td.diff_right *::selection,
+.diff_select_left th.diff_right::selection,
+.diff_select_left th.diff_right *::selection,
+.diff_select_right td.diff_left::selection,
+.diff_select_right td.diff_left *::selection,
+.diff_select_right th.diff_left::selection,
+.diff_select_right th.diff_left *::selection {
+  background-color: transparent;
+  cursor: text;
+}
 
 /* DEBUG INFO STYLES */
 div.debug_container {
@@ -764,7 +847,7 @@ ul.hotkeys span.key-id {
   border: 1px solid;
   border-radius: 3px;
   padding: 1px 7px;
-  width: 0.5em;
+  width: 1em;
   display: inline-block;
   text-align: center;
   margin-top: 0.2em;
@@ -831,7 +914,7 @@ table.commit tr .title {
   border-left: 4px solid;
 }
 .ci-result li:first-child { margin-top: 0px; }
-.ci-result li span { display: block; }
+.ci-result li > span { display: block; }
 
 /* Floating buttons */
 
@@ -845,4 +928,41 @@ table.commit tr .title {
   border-style: solid;
   box-shadow: 2px 2px 6px 0px #ccc;
   cursor: pointer;
+}
+
+/* Command palette */
+
+.cmd-palette {
+  position: absolute;
+  z-index: 99;
+  top: 36px;
+  left: 50%;
+  width: 40em;
+  margin-left: -20em;
+  box-shadow: 1px 1px 3px 2px #dcdcdc;
+  background-color: white;
+  border: solid 2px;
+  padding: 0px 1px;
+}
+
+.cmd-palette input {
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.cmd-palette ul {
+  max-height: 10em;
+  overflow-y: scroll;
+  margin: 4px 0;
+  padding: 2px 4px;
+}
+
+.cmd-palette li {
+  list-style-type: none;
+  cursor: default;
+  padding: 4px 6px;
+}
+
+.cmd-palette li .icon {
+  margin-right: 10px;
 }

@@ -40,6 +40,14 @@ CLASS zcl_abapgit_gui_html_processor DEFINITION
       RETURNING
         VALUE(rv_yes) TYPE abap_bool.
 
+    METHODS find_head_offset
+      IMPORTING
+        iv_html            TYPE string
+      RETURNING
+        VALUE(rv_head_end) TYPE i
+      RAISING
+        zcx_abapgit_exception.
+
 ENDCLASS.
 
 
@@ -72,15 +80,12 @@ CLASS ZCL_ABAPGIT_GUI_HTML_PROCESSOR IMPLEMENTATION.
     DATA lv_len TYPE i.
     DATA lv_cur TYPE i.
 
-    DATA lc_css_build TYPE string VALUE '<link rel="stylesheet" type="text/css" href="$BUILD_NAME">'.
-    REPLACE FIRST OCCURRENCE OF '$BUILD_NAME' IN lc_css_build WITH c_css_build_name. " Mmmm
+    DATA lv_css_build TYPE string VALUE '<link rel="stylesheet" type="text/css" href="$BUILD_NAME">'.
+    REPLACE FIRST OCCURRENCE OF '$BUILD_NAME' IN lv_css_build WITH c_css_build_name. " Mmmm
 
     CLEAR: ev_html, et_css_urls.
 
-    lv_head_end = find( val = iv_html regex = |{ cl_abap_char_utilities=>newline }?\\s*</head>| case = abap_false ).
-    IF lv_head_end <= 0.
-      zcx_abapgit_exception=>raise( 'HTML preprocessor: </head> not found' ).
-    ENDIF.
+    lv_head_end = find_head_offset( iv_html ).
 
     CREATE OBJECT lo_css_re
       EXPORTING
@@ -107,7 +112,7 @@ CLASS ZCL_ABAPGIT_GUI_HTML_PROCESSOR IMPLEMENTATION.
         && c_preprocess_marker
         && cl_abap_char_utilities=>newline
         && `    `.
-      ev_html = ev_html && lv_marker && lc_css_build.
+      ev_html = ev_html && lv_marker && lv_css_build.
     ENDIF.
     ev_html = ev_html && substring( val = iv_html off = lv_head_end ).
 
@@ -153,4 +158,17 @@ CLASS ZCL_ABAPGIT_GUI_HTML_PROCESSOR IMPLEMENTATION.
     ENDIF.
 
   ENDMETHOD.
+
+  METHOD find_head_offset.
+
+    rv_head_end = find( val = iv_html regex = |{ cl_abap_char_utilities=>newline }?\\s*</head>| case = abap_false ).
+    IF rv_head_end <= 0.
+      rv_head_end = find( val = iv_html regex = |</head>| case = abap_false ).
+      IF rv_head_end <= 0.
+        zcx_abapgit_exception=>raise( 'HTML preprocessor: </head> not found' ).
+      ENDIF.
+    ENDIF.
+
+  ENDMETHOD.
+
 ENDCLASS.

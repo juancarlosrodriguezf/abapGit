@@ -131,7 +131,7 @@ ENDCLASS.
 
 
 
-CLASS ZCL_ABAPGIT_GUI_ROUTER IMPLEMENTATION.
+CLASS zcl_abapgit_gui_router IMPLEMENTATION.
 
 
   METHOD abapgit_services_actions.
@@ -176,21 +176,21 @@ CLASS ZCL_ABAPGIT_GUI_ROUTER IMPLEMENTATION.
     DATA:
       lv_path    TYPE string,
       lv_default TYPE string,
-      lo_fe_serv TYPE REF TO zif_abapgit_frontend_services,
+      li_fe_serv TYPE REF TO zif_abapgit_frontend_services,
       lv_package TYPE devclass.
 
     lv_package = iv_package.
     TRANSLATE lv_package USING '/#'.
     CONCATENATE lv_package '_' sy-datlo '_' sy-timlo INTO lv_default.
 
-    lo_fe_serv = zcl_abapgit_ui_factory=>get_frontend_services( ).
+    li_fe_serv = zcl_abapgit_ui_factory=>get_frontend_services( ).
 
-    lv_path = lo_fe_serv->show_file_save_dialog(
+    lv_path = li_fe_serv->show_file_save_dialog(
       iv_title            = 'Export ZIP'
       iv_extension        = 'zip'
       iv_default_filename = lv_default ).
 
-    lo_fe_serv->file_download(
+    li_fe_serv->file_download(
       iv_path = lv_path
       iv_xstr = iv_xstr ).
 
@@ -499,6 +499,9 @@ CLASS ZCL_ABAPGIT_GUI_ROUTER IMPLEMENTATION.
         " REPOSITORY services actions
       WHEN zif_abapgit_definitions=>c_action-repo_newoffline.                 " New offline repo
         zcl_abapgit_services_repo=>new_offline( ).
+        ev_state = zcl_abapgit_gui=>c_event_state-re_render.
+      WHEN zif_abapgit_definitions=>c_action-repo_add_all_obj_to_trans_req.
+        zcl_abapgit_transport=>add_all_objects_to_trans_req( lv_key ).
         ev_state = zcl_abapgit_gui=>c_event_state-re_render.
       WHEN zif_abapgit_definitions=>c_action-repo_refresh.                    " Repo refresh
         zcl_abapgit_services_repo=>refresh( lv_key ).

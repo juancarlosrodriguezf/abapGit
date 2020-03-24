@@ -154,11 +154,6 @@ INTERFACE zif_abapgit_definitions
   TYPES:
     tt_repo_files TYPE STANDARD TABLE OF ty_repo_file WITH DEFAULT KEY .
   TYPES:
-    BEGIN OF ty_stage_files,
-      local  TYPE zif_abapgit_definitions=>ty_files_item_tt,
-      remote TYPE zif_abapgit_definitions=>ty_files_tt,
-    END OF ty_stage_files .
-  TYPES:
     ty_chmod TYPE c LENGTH 6 .
   TYPES:
     BEGIN OF ty_object,
@@ -180,6 +175,7 @@ INTERFACE zif_abapgit_definitions
       devclass TYPE tadir-devclass,
       korrnum  TYPE tadir-korrnum,
       delflag  TYPE tadir-delflag,
+      genflag  TYPE tadir-genflag,
       path     TYPE string,
     END OF ty_tadir .
   TYPES:
@@ -198,6 +194,14 @@ INTERFACE zif_abapgit_definitions
     END OF ty_result .
   TYPES:
     ty_results_tt TYPE STANDARD TABLE OF ty_result WITH DEFAULT KEY .
+  TYPES:
+    ty_results_ts_path TYPE HASHED TABLE OF ty_result WITH UNIQUE KEY path filename .
+  TYPES:
+    BEGIN OF ty_stage_files,
+      local  TYPE zif_abapgit_definitions=>ty_files_item_tt,
+      remote TYPE zif_abapgit_definitions=>ty_files_tt,
+      status TYPE zif_abapgit_definitions=>ty_results_ts_path,
+    END OF ty_stage_files .
   TYPES:
     ty_sval_tt TYPE STANDARD TABLE OF sval WITH DEFAULT KEY .
   TYPES:
@@ -331,15 +335,16 @@ INTERFACE zif_abapgit_definitions
     tt_repo_items TYPE STANDARD TABLE OF ty_repo_item WITH DEFAULT KEY .
   TYPES:
     BEGIN OF ty_s_user_settings,
-      max_lines                  TYPE i,
-      adt_jump_enabled           TYPE abap_bool,
-      show_default_repo          TYPE abap_bool,
-      link_hints_enabled         TYPE abap_bool,
-      link_hint_key              TYPE c LENGTH 1,
-      hotkeys                    TYPE tty_hotkey,
-      parallel_proc_disabled     TYPE abap_bool,
-      icon_scaling               TYPE c LENGTH 1,
-      ui_theme                   TYPE string,
+      max_lines              TYPE i,
+      adt_jump_enabled       TYPE abap_bool,
+      show_default_repo      TYPE abap_bool,
+      link_hints_enabled     TYPE abap_bool,
+      link_hint_key          TYPE c LENGTH 1,
+      hotkeys                TYPE tty_hotkey,
+      parallel_proc_disabled TYPE abap_bool,
+      icon_scaling           TYPE c LENGTH 1,
+      ui_theme               TYPE string,
+      hide_sapgui_hint       TYPE abap_bool,
     END OF ty_s_user_settings .
   TYPES:
     tty_dokil TYPE STANDARD TABLE OF dokil
@@ -347,6 +352,21 @@ INTERFACE zif_abapgit_definitions
   TYPES:
     tty_lines TYPE STANDARD TABLE OF i
                         WITH NON-UNIQUE DEFAULT KEY .
+
+  TYPES:
+    BEGIN OF ty_col_spec,
+      tech_name    TYPE string,
+      display_name TYPE string,
+      css_class    TYPE string,
+      add_tz       TYPE abap_bool,
+      title        TYPE string,
+    END OF ty_col_spec,
+    tty_col_spec TYPE STANDARD TABLE OF ty_col_spec
+                      WITH NON-UNIQUE KEY tech_name.
+
+  TYPES:
+    ty_proxy_bypass_url       TYPE c LENGTH 255,
+    ty_range_proxy_bypass_url TYPE RANGE OF ty_proxy_bypass_url.
 
   CONSTANTS:
     BEGIN OF c_git_branch_type,
@@ -389,65 +409,68 @@ INTERFACE zif_abapgit_definitions
   CONSTANTS c_english TYPE spras VALUE 'E' ##NO_TEXT.
   CONSTANTS c_root_dir TYPE string VALUE '/' ##NO_TEXT.
   CONSTANTS c_dot_abapgit TYPE string VALUE '.abapgit.xml' ##NO_TEXT.
-  CONSTANTS c_author_regex TYPE string VALUE '^([\\\w\s\.\*\,\#@%\-_1-9\(\) ]+) <(.*)> (\d{10})\s?.\d{4}$' ##NO_TEXT.
+  CONSTANTS c_author_regex TYPE string VALUE '^(.+) <(.*)> (\d{10})\s?.\d{4}$' ##NO_TEXT.
   CONSTANTS:
     BEGIN OF c_action,
-      repo_refresh             TYPE string VALUE 'repo_refresh',
-      repo_remove              TYPE string VALUE 'repo_remove',
-      repo_settings            TYPE string VALUE 'repo_settings',
-      repo_purge               TYPE string VALUE 'repo_purge',
-      repo_newonline           TYPE string VALUE 'repo_newonline',
-      repo_newoffline          TYPE string VALUE 'repo_newoffline',
-      repo_remote_attach       TYPE string VALUE 'repo_remote_attach',
-      repo_remote_detach       TYPE string VALUE 'repo_remote_detach',
-      repo_remote_change       TYPE string VALUE 'repo_remote_change',
-      repo_refresh_checksums   TYPE string VALUE 'repo_refresh_checksums',
-      repo_toggle_fav          TYPE string VALUE 'repo_toggle_fav',
-      repo_transport_to_branch TYPE string VALUE 'repo_transport_to_branch',
-      repo_syntax_check        TYPE string VALUE 'repo_syntax_check',
-      repo_code_inspector      TYPE string VALUE 'repo_code_inspector',
-      repo_open_in_master_lang TYPE string VALUE 'repo_open_in_master_lang',
-      repo_log                 TYPE string VALUE 'repo_log',
-      abapgit_home             TYPE string VALUE 'abapgit_home',
-      abapgit_install          TYPE string VALUE 'abapgit_install',
-      zip_import               TYPE string VALUE 'zip_import',
-      zip_export               TYPE string VALUE 'zip_export',
-      zip_package              TYPE string VALUE 'zip_package',
-      zip_transport            TYPE string VALUE 'zip_transport',
-      zip_object               TYPE string VALUE 'zip_object',
-      git_pull                 TYPE string VALUE 'git_pull',
-      git_reset                TYPE string VALUE 'git_reset',
-      git_branch_create        TYPE string VALUE 'git_branch_create',
-      git_branch_switch        TYPE string VALUE 'git_branch_switch',
-      git_branch_delete        TYPE string VALUE 'git_branch_delete',
-      git_tag_create           TYPE string VALUE 'git_tag_create',
-      git_tag_delete           TYPE string VALUE 'git_tag_delete',
-      git_tag_switch           TYPE string VALUE 'git_tag_switch',
-      git_commit               TYPE string VALUE 'git_commit',
-      db_display               TYPE string VALUE 'db_display',
-      db_edit                  TYPE string VALUE 'db_edit',
-      bg_update                TYPE string VALUE 'bg_update',
-      go_explore               TYPE string VALUE 'go_explore',
-      go_repo_overview         TYPE string VALUE 'go_repo_overview',
-      go_db                    TYPE string VALUE 'go_db',
-      go_background            TYPE string VALUE 'go_background',
-      go_background_run        TYPE string VALUE 'go_background_run',
-      go_diff                  TYPE string VALUE 'go_diff',
-      go_stage                 TYPE string VALUE 'go_stage',
-      go_commit                TYPE string VALUE 'go_commit',
-      go_branch_overview       TYPE string VALUE 'go_branch_overview',
-      go_tag_overview          TYPE string VALUE 'go_tag_overview',
-      go_playground            TYPE string VALUE 'go_playground',
-      go_debuginfo             TYPE string VALUE 'go_debuginfo',
-      go_settings              TYPE string VALUE 'go_settings',
-      go_tutorial              TYPE string VALUE 'go_tutorial',
-      go_patch                 TYPE string VALUE 'go_patch',
-      jump                     TYPE string VALUE 'jump',
-      jump_transport           TYPE string VALUE 'jump_transport',
-      url                      TYPE string VALUE 'url',
-      goto_source              TYPE string VALUE 'goto_source',
-      show_callstack           TYPE string VALUE 'show_callstack',
-      goto_message             TYPE string VALUE 'goto_message',
+      repo_refresh                  TYPE string VALUE 'repo_refresh',
+      repo_remove                   TYPE string VALUE 'repo_remove',
+      repo_settings                 TYPE string VALUE 'repo_settings',
+      repo_purge                    TYPE string VALUE 'repo_purge',
+      repo_newonline                TYPE string VALUE 'repo_newonline',
+      repo_newoffline               TYPE string VALUE 'repo_newoffline',
+      repo_add_all_obj_to_trans_req TYPE string VALUE 'repo_add_all_obj_to_trans_req',
+      repo_remote_attach            TYPE string VALUE 'repo_remote_attach',
+      repo_remote_detach            TYPE string VALUE 'repo_remote_detach',
+      repo_remote_change            TYPE string VALUE 'repo_remote_change',
+      repo_refresh_checksums        TYPE string VALUE 'repo_refresh_checksums',
+      repo_toggle_fav               TYPE string VALUE 'repo_toggle_fav',
+      repo_transport_to_branch      TYPE string VALUE 'repo_transport_to_branch',
+      repo_syntax_check             TYPE string VALUE 'repo_syntax_check',
+      repo_code_inspector           TYPE string VALUE 'repo_code_inspector',
+      repo_open_in_master_lang      TYPE string VALUE 'repo_open_in_master_lang',
+      repo_log                      TYPE string VALUE 'repo_log',
+      abapgit_home                  TYPE string VALUE 'abapgit_home',
+      abapgit_install               TYPE string VALUE 'abapgit_install',
+      zip_import                    TYPE string VALUE 'zip_import',
+      zip_export                    TYPE string VALUE 'zip_export',
+      zip_package                   TYPE string VALUE 'zip_package',
+      zip_transport                 TYPE string VALUE 'zip_transport',
+      zip_object                    TYPE string VALUE 'zip_object',
+      git_pull                      TYPE string VALUE 'git_pull',
+      git_reset                     TYPE string VALUE 'git_reset',
+      git_branch_create             TYPE string VALUE 'git_branch_create',
+      git_branch_switch             TYPE string VALUE 'git_branch_switch',
+      git_branch_delete             TYPE string VALUE 'git_branch_delete',
+      git_tag_create                TYPE string VALUE 'git_tag_create',
+      git_tag_delete                TYPE string VALUE 'git_tag_delete',
+      git_tag_switch                TYPE string VALUE 'git_tag_switch',
+      git_commit                    TYPE string VALUE 'git_commit',
+      db_display                    TYPE string VALUE 'db_display',
+      db_edit                       TYPE string VALUE 'db_edit',
+      bg_update                     TYPE string VALUE 'bg_update',
+      go_explore                    TYPE string VALUE 'go_explore',
+      go_repo_overview              TYPE string VALUE 'go_repo_overview',
+      go_db                         TYPE string VALUE 'go_db',
+      go_background                 TYPE string VALUE 'go_background',
+      go_background_run             TYPE string VALUE 'go_background_run',
+      go_diff                       TYPE string VALUE 'go_diff',
+      go_stage                      TYPE string VALUE 'go_stage',
+      go_commit                     TYPE string VALUE 'go_commit',
+      go_branch_overview            TYPE string VALUE 'go_branch_overview',
+      go_tag_overview               TYPE string VALUE 'go_tag_overview',
+      go_playground                 TYPE string VALUE 'go_playground',
+      go_debuginfo                  TYPE string VALUE 'go_debuginfo',
+      go_settings                   TYPE string VALUE 'go_settings',
+      go_tutorial                   TYPE string VALUE 'go_tutorial',
+      go_patch                      TYPE string VALUE 'go_patch',
+      jump                          TYPE string VALUE 'jump',
+      jump_transport                TYPE string VALUE 'jump_transport',
+      url                           TYPE string VALUE 'url',
+      goto_source                   TYPE string VALUE 'goto_source',
+      show_callstack                TYPE string VALUE 'show_callstack',
+      change_order_by               TYPE string VALUE 'change_order_by',
+      goto_message                  TYPE string VALUE 'goto_message',
+      direction                     TYPE string VALUE 'direction',
     END OF c_action .
   CONSTANTS c_tag_prefix TYPE string VALUE 'refs/tags/' ##NO_TEXT.
   CONSTANTS c_spagpa_param_repo_key TYPE char20 VALUE 'REPO_KEY' ##NO_TEXT.

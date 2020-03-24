@@ -9,7 +9,7 @@ INTERFACE zif_abapgit_oo_object_fnc PUBLIC.
     create
       IMPORTING
         iv_package    TYPE devclass
-        iv_overwrite  TYPE seox_boolean DEFAULT seox_true
+        iv_overwrite  TYPE abap_bool DEFAULT abap_true
         it_attributes TYPE zif_abapgit_definitions=>ty_obj_attribute_tt OPTIONAL
       CHANGING
         cg_properties TYPE any
@@ -18,7 +18,7 @@ INTERFACE zif_abapgit_oo_object_fnc PUBLIC.
     generate_locals
       IMPORTING
         is_key                   TYPE seoclskey
-        iv_force                 TYPE seox_boolean DEFAULT seox_true
+        iv_force                 TYPE abap_bool DEFAULT abap_true
         it_local_definitions     TYPE seop_source_string OPTIONAL
         it_local_implementations TYPE seop_source_string OPTIONAL
         it_local_macros          TYPE seop_source_string OPTIONAL
@@ -37,6 +37,7 @@ INTERFACE zif_abapgit_oo_object_fnc PUBLIC.
         iv_class_name TYPE seoclsname
         it_text_pool  TYPE textpool_table
         iv_language   TYPE spras
+        iv_state      TYPE c DEFAULT 'I'
       RAISING
         zcx_abapgit_exception,
     update_descriptions
@@ -56,9 +57,10 @@ INTERFACE zif_abapgit_oo_object_fnc PUBLIC.
         zcx_abapgit_exception,
     create_documentation
       IMPORTING
-        it_lines       TYPE tlinetab
-        iv_object_name TYPE dokhl-object
-        iv_language    TYPE spras
+        it_lines         TYPE tlinetab
+        iv_object_name   TYPE dokhl-object
+        iv_language      TYPE spras
+        iv_no_masterlang TYPE abap_bool OPTIONAL
       RAISING
         zcx_abapgit_exception,
     get_includes

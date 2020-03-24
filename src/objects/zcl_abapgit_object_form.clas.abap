@@ -53,26 +53,26 @@ CLASS zcl_abapgit_object_form DEFINITION PUBLIC INHERITING FROM zcl_abapgit_obje
 
     METHODS _save_form
       IMPORTING
-        it_lines     TYPE zcl_abapgit_object_form=>tyt_lines
+        it_lines     TYPE tyt_lines
       CHANGING
-        cs_form_data TYPE zcl_abapgit_object_form=>tys_form_data.
+        cs_form_data TYPE tys_form_data.
 
     METHODS extract_tdlines
       IMPORTING
-        is_form_data    TYPE zcl_abapgit_object_form=>tys_form_data
+        is_form_data    TYPE tys_form_data
       RETURNING
-        VALUE(rt_lines) TYPE zcl_abapgit_object_form=>tyt_lines
+        VALUE(rt_lines) TYPE tyt_lines
       RAISING
         zcx_abapgit_exception.
 
     METHODS _clear_changed_fields
       CHANGING
-        cs_form_data TYPE zcl_abapgit_object_form=>tys_form_data.
+        cs_form_data TYPE tys_form_data.
 
     METHODS compress_lines
       IMPORTING
-        is_form_data TYPE zcl_abapgit_object_form=>tys_form_data
-        it_lines     TYPE zcl_abapgit_object_form=>tyt_lines
+        is_form_data TYPE tys_form_data
+        it_lines     TYPE tyt_lines
       RAISING
         zcx_abapgit_exception.
 
@@ -80,20 +80,20 @@ CLASS zcl_abapgit_object_form DEFINITION PUBLIC INHERITING FROM zcl_abapgit_obje
       IMPORTING
         iv_object_name        TYPE zif_abapgit_definitions=>ty_item-obj_name
       RETURNING
-        VALUE(rt_text_header) TYPE zcl_abapgit_object_form=>tyt_text_header.
+        VALUE(rt_text_header) TYPE tyt_text_header.
 
     METHODS _read_form
       IMPORTING
-        is_text_header TYPE zcl_abapgit_object_form=>tys_text_header
+        is_text_header TYPE tys_text_header
       EXPORTING
         ev_form_found  TYPE abap_bool
-        es_form_data   TYPE zcl_abapgit_object_form=>tys_form_data
-        et_lines       TYPE zcl_abapgit_object_form=>tyt_lines.
+        es_form_data   TYPE tys_form_data
+        et_lines       TYPE tyt_lines.
 
     METHODS _sort_tdlines_by_windows
       CHANGING
-        ct_form_windows TYPE zcl_abapgit_object_form=>tys_form_data-windows
-        ct_lines        TYPE zcl_abapgit_object_form=>tyt_lines.
+        ct_form_windows TYPE tys_form_data-windows
+        ct_lines        TYPE tyt_lines.
 
     METHODS order_check_and_insert
       RAISING
@@ -220,7 +220,7 @@ CLASS ZCL_ABAPGIT_OBJECT_FORM IMPLEMENTATION.
 
   METHOD order_check_and_insert.
 
-    DATA: ls_order TYPE e071k-trkorr.
+    DATA: lv_order TYPE e071k-trkorr.
 
     CALL FUNCTION 'SAPSCRIPT_ORDER_CHECK'
       EXPORTING
@@ -242,7 +242,7 @@ CLASS ZCL_ABAPGIT_OBJECT_FORM IMPLEMENTATION.
         form           = mv_form_name
         masterlang     = mv_language
       CHANGING
-        order          = ls_order
+        order          = lv_order
       EXCEPTIONS
         invalid_input  = 1
         order_canceled = 2
@@ -423,7 +423,7 @@ CLASS ZCL_ABAPGIT_OBJECT_FORM IMPLEMENTATION.
         _clear_changed_fields( CHANGING cs_form_data = ls_form_data ).
 
         compress_lines( is_form_data = ls_form_data
-                         it_lines     = lt_lines ).
+                        it_lines     = lt_lines ).
 
         INSERT ls_form_data INTO TABLE lt_form_data.
 
@@ -488,6 +488,10 @@ CLASS ZCL_ABAPGIT_OBJECT_FORM IMPLEMENTATION.
 
     _sort_tdlines_by_windows( CHANGING ct_form_windows  = es_form_data-windows
                                        ct_lines         = et_lines ).
+
+    es_form_data-form_header-tdversion = '00001'.
+    es_form_data-text_header-tdversion = '00001'.
+
   ENDMETHOD.
 
 
@@ -519,7 +523,7 @@ CLASS ZCL_ABAPGIT_OBJECT_FORM IMPLEMENTATION.
 
 
   METHOD _sort_tdlines_by_windows.
-    DATA lt_lines        TYPE zcl_abapgit_object_form=>tyt_lines.
+    DATA lt_lines        TYPE tyt_lines.
     DATA ls_lines        LIKE LINE OF lt_lines.
     DATA ls_form_windows LIKE LINE OF ct_form_windows.
     DATA lv_elt_windows  TYPE tdformat VALUE '/W'.
@@ -534,6 +538,9 @@ CLASS ZCL_ABAPGIT_OBJECT_FORM IMPLEMENTATION.
       lv_firstloop = abap_true.
       READ TABLE lt_lines INTO ls_lines WITH KEY tdformat = lv_elt_windows
                                                  tdline   = ls_form_windows-tdwindow.
+      IF sy-subrc <> 0.
+        CONTINUE. " current loop
+      ENDIF.
       LOOP AT lt_lines INTO ls_lines FROM sy-tabix.
         IF lv_firstloop = abap_false AND
            ls_lines-tdformat = lv_elt_windows.

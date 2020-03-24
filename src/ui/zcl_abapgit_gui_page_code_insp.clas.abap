@@ -177,7 +177,7 @@ CLASS ZCL_ABAPGIT_GUI_PAGE_CODE_INSP IMPLEMENTATION.
 
   METHOD is_stage_allowed.
 
-    rv_is_stage_allowed =  boolc( NOT ( mo_repo->get_local_settings( )-block_commit = abap_true
+    rv_is_stage_allowed = boolc( NOT ( mo_repo->get_local_settings( )-block_commit = abap_true
                                            AND has_inspection_errors( ) = abap_true ) ).
 
   ENDMETHOD.
@@ -313,7 +313,7 @@ CLASS ZCL_ABAPGIT_GUI_PAGE_CODE_INSP IMPLEMENTATION.
   METHOD zif_abapgit_gui_renderable~render.
 
     ms_control-page_menu = build_menu( ).
-    ro_html = super->zif_abapgit_gui_renderable~render( ).
+    ri_html = super->zif_abapgit_gui_renderable~render( ).
 
   ENDMETHOD.
 ENDCLASS.

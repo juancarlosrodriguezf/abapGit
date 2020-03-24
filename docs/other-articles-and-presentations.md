@@ -108,3 +108,21 @@ SAP Teched Barcelona
 [Introducing APACK – A Package and Dependency Manager for ABAP](https://blogs.sap.com/2019/05/06/introducing-apack-a-package-and-dependency-manager-for-abap/), Sebastian Wolf
 
 [ASUG82855 - How Microsoft Uses Git for ABAP Code Management](https://blog.asug.com/hubfs/2019%20AC%20Slide%20Decks%20Wednesday/ASUG82855%20-%20How%20Microsoft%20Uses%20Git%20for%20ABAP%20Code%20Management.pdf), Gopal Nair and Ram Bairavarsu
+
+[Brainstorming on abapGIT](https://blogs.sap.com/2019/08/15/brainstorming-on-abapgit/), Jörg Krause
+
+[APACK - ABAP Package and Dependency Manager](https://www.youtube.com/watch?v=PfB2w7wuHQI), Sebastian Wolf
+
+[Versioning your local objects using abapgit](https://blogs.sap.com/2019/08/19/versioning-your-local-objects-using-abapgit/), 
+Frederik Hudak
+
+[Improving your ABAP code quality with open-source tools](https://github.com/jwigert/sapsa-impuls-2019-jw/blob/master/F%C3%B6rb%C3%A4ttra%20kvaliteten%20p%C3%A5%20din%20ABAP-kod%20med%20hj%C3%A4lp%20av%20%C3%B6ppen%20k%C3%A4llkod-verktyg.pdf), Johan Wigert (in Swedish)
+
+[Doing DevOps with SAP](https://www.youtube.com/watch?v=7d8pngf85Ag), Abel Wang, Ram and Gopal
+
+### 2020
+
+[How we do ABAP code review using abapGit](https://blogs.sap.com/2020/01/30/how-we-do-abap-code-review-using-abapgit/), 
+Michael Pang
+
+[The journey to Git-based ABAP development: Part 1](https://blogs.sap.com/2020/02/26/the-journey-to-git-based-abap-development-part-1/), Marcello Urbani
