@@ -1,129 +1,129 @@
-CLASS zcl_abapgit_gui_page DEFINITION PUBLIC ABSTRACT CREATE PUBLIC.
+class zcl_abapgit_gui_page definition public abstract create public.
 
-  PUBLIC SECTION.
-    INTERFACES:
+  public section.
+    interfaces:
       zif_abapgit_gui_renderable,
       zif_abapgit_gui_event_handler,
       zif_abapgit_gui_error_handler.
 
-    CONSTANTS:
+    constants:
       " You should remember that these actions are handled in the UI.
       " Have a look at the JS file.
-      BEGIN OF c_global_page_action,
-        showhotkeys TYPE string VALUE `showHotkeys` ##NO_TEXT,
-      END OF c_global_page_action.
+      begin of c_global_page_action,
+        showhotkeys type string value `showHotkeys` ##NO_TEXT,
+      end of c_global_page_action.
 
-    CLASS-METHODS:
+    class-methods:
       get_global_hotkeys
-        RETURNING
-          VALUE(rt_hotkey) TYPE zif_abapgit_gui_page_hotkey=>tty_hotkey_with_name.
+        returning
+          value(rt_hotkey) type zif_abapgit_gui_page_hotkey=>tty_hotkey_with_name.
 
-    METHODS:
+    methods:
       constructor.
 
-  PROTECTED SECTION.
-    TYPES: BEGIN OF ty_control,
-             redirect_url TYPE string,
-             page_title   TYPE string,
-             page_menu    TYPE REF TO zcl_abapgit_html_toolbar,
-           END OF  ty_control.
+  protected section.
+    types: begin of ty_control,
+             redirect_url type string,
+             page_title   type string,
+             page_menu    type ref to zcl_abapgit_html_toolbar,
+           end of  ty_control.
 
-    TYPES: BEGIN OF ty_event,
-             method TYPE string,
-             name   TYPE string,
-           END OF  ty_event.
+    types: begin of ty_event,
+             method type string,
+             name   type string,
+           end of  ty_event.
 
-    TYPES: tt_events TYPE STANDARD TABLE OF ty_event WITH DEFAULT KEY.
+    types: tt_events type standard table of ty_event with default key.
 
-    DATA: ms_control TYPE ty_control.
+    data: ms_control type ty_control.
 
-    METHODS render_content ABSTRACT
-      RETURNING VALUE(ro_html) TYPE REF TO zcl_abapgit_html
-      RAISING   zcx_abapgit_exception.
+    methods render_content abstract
+      returning value(ro_html) type ref to zcl_abapgit_html
+      raising   zcx_abapgit_exception.
 
-    METHODS get_events
-      RETURNING VALUE(rt_events) TYPE tt_events
-      RAISING   zcx_abapgit_exception.
+    methods get_events
+      returning value(rt_events) type tt_events
+      raising   zcx_abapgit_exception.
 
-    METHODS render_event_as_form
-      IMPORTING is_event       TYPE ty_event
-      RETURNING VALUE(ro_html) TYPE REF TO zcl_abapgit_html
-      RAISING   zcx_abapgit_exception.
+    methods render_event_as_form
+      importing is_event       type ty_event
+      returning value(ro_html) type ref to zcl_abapgit_html
+      raising   zcx_abapgit_exception.
 
-    METHODS scripts
-      RETURNING VALUE(ro_html) TYPE REF TO zcl_abapgit_html
-      RAISING   zcx_abapgit_exception.
+    methods scripts
+      returning value(ro_html) type ref to zcl_abapgit_html
+      raising   zcx_abapgit_exception.
 
-  PRIVATE SECTION.
-    DATA: mo_settings         TYPE REF TO zcl_abapgit_settings,
-          mt_hotkeys          TYPE zif_abapgit_gui_page_hotkey=>tty_hotkey_with_name,
-          mx_error            TYPE REF TO zcx_abapgit_exception,
-          mo_exception_viewer TYPE REF TO zcl_abapgit_exception_viewer.
-    METHODS html_head
-      RETURNING VALUE(ro_html) TYPE REF TO zcl_abapgit_html.
+  private section.
+    data: mo_settings         type ref to zcl_abapgit_settings,
+          mt_hotkeys          type zif_abapgit_gui_page_hotkey=>tty_hotkey_with_name,
+          mx_error            type ref to zcx_abapgit_exception,
+          mo_exception_viewer type ref to zcl_abapgit_exception_viewer.
+    methods html_head
+      returning value(ro_html) type ref to zcl_abapgit_html.
 
-    METHODS title
-      RETURNING VALUE(ro_html) TYPE REF TO zcl_abapgit_html.
+    methods title
+      returning value(ro_html) type ref to zcl_abapgit_html.
 
-    METHODS footer
-      RETURNING VALUE(ro_html) TYPE REF TO zcl_abapgit_html.
+    methods footer
+      returning value(ro_html) type ref to zcl_abapgit_html.
 
-    METHODS redirect
-      RETURNING VALUE(ro_html) TYPE REF TO zcl_abapgit_html.
+    methods redirect
+      returning value(ro_html) type ref to zcl_abapgit_html.
 
-    METHODS link_hints
-      IMPORTING
-        io_html TYPE REF TO zcl_abapgit_html
-      RAISING
+    methods link_hints
+      importing
+        io_html type ref to zcl_abapgit_html
+      raising
         zcx_abapgit_exception.
 
-    METHODS insert_hotkeys_to_page
-      IMPORTING
-        io_html TYPE REF TO zcl_abapgit_html
-      RAISING
+    methods insert_hotkeys_to_page
+      importing
+        io_html type ref to zcl_abapgit_html
+      raising
         zcx_abapgit_exception.
 
-    METHODS render_hotkey_overview
-      RETURNING
-        VALUE(ro_html) TYPE REF TO zcl_abapgit_html
-      RAISING
+    methods render_hotkey_overview
+      returning
+        value(ro_html) type ref to zcl_abapgit_html
+      raising
         zcx_abapgit_exception.
 
-    METHODS call_browser
-      IMPORTING
-        iv_url TYPE csequence
-      RAISING
+    methods call_browser
+      importing
+        iv_url type csequence
+      raising
         zcx_abapgit_exception.
 
-    METHODS define_hotkeys
-      RETURNING
-        VALUE(rt_hotkeys) TYPE zif_abapgit_gui_page_hotkey=>tty_hotkey_with_name
-      RAISING
+    methods define_hotkeys
+      returning
+        value(rt_hotkeys) type zif_abapgit_gui_page_hotkey=>tty_hotkey_with_name
+      raising
         zcx_abapgit_exception.
 
-    METHODS get_default_hotkeys
-      RETURNING
-        VALUE(rt_default_hotkeys) TYPE zif_abapgit_gui_page_hotkey=>tty_hotkey_with_name.
+    methods get_default_hotkeys
+      returning
+        value(rt_default_hotkeys) type zif_abapgit_gui_page_hotkey=>tty_hotkey_with_name.
 
-    METHODS render_error_message_box
-      RETURNING
-        VALUE(ro_html) TYPE REF TO zcl_abapgit_html
-      RAISING
+    methods render_error_message_box
+      returning
+        value(ro_html) type ref to zcl_abapgit_html
+      raising
         zcx_abapgit_exception.
 
-ENDCLASS.
+endclass.
 
 
 
-CLASS ZCL_ABAPGIT_GUI_PAGE IMPLEMENTATION.
+class zcl_abapgit_gui_page implementation.
 
 
-  METHOD call_browser.
+  method call_browser.
 
     cl_gui_frontend_services=>execute(
-      EXPORTING
+      exporting
         document               = |{ iv_url }|
-      EXCEPTIONS
+      exceptions
         cntl_error             = 1
         error_no_gui           = 2
         bad_parameter          = 3
@@ -133,29 +133,29 @@ CLASS ZCL_ABAPGIT_GUI_PAGE IMPLEMENTATION.
         error_execute_failed   = 7
         synchronous_failed     = 8
         not_supported_by_gui   = 9
-        OTHERS                 = 10 ).
+        others                 = 10 ).
 
-    IF sy-subrc <> 0.
+    if sy-subrc <> 0.
       zcx_abapgit_exception=>raise_t100( ).
-    ENDIF.
+    endif.
 
-  ENDMETHOD.
+  endmethod.
 
 
-  METHOD constructor.
+  method constructor.
 
     mo_settings = zcl_abapgit_persist_settings=>get_instance( )->read( ).
 
-  ENDMETHOD.
+  endmethod.
 
 
-  METHOD define_hotkeys.
+  method define_hotkeys.
 
-    DATA: lo_settings             TYPE REF TO zcl_abapgit_settings,
-          lt_user_defined_hotkeys TYPE zif_abapgit_definitions=>tty_hotkey.
+    data: lo_settings             type ref to zcl_abapgit_settings,
+          lt_user_defined_hotkeys type zif_abapgit_definitions=>tty_hotkey.
 
-    FIELD-SYMBOLS: <ls_hotkey>              TYPE zif_abapgit_gui_page_hotkey=>ty_hotkey_with_name,
-                   <ls_user_defined_hotkey> LIKE LINE OF lt_user_defined_hotkeys.
+    field-symbols: <ls_hotkey>              type zif_abapgit_gui_page_hotkey=>ty_hotkey_with_name,
+                   <ls_user_defined_hotkey> like line of lt_user_defined_hotkeys.
 
     rt_hotkeys = get_default_hotkeys( ).
 
@@ -163,26 +163,26 @@ CLASS ZCL_ABAPGIT_GUI_PAGE IMPLEMENTATION.
     lo_settings = zcl_abapgit_persist_settings=>get_instance( )->read( ).
     lt_user_defined_hotkeys = lo_settings->get_hotkeys( ).
 
-    LOOP AT rt_hotkeys ASSIGNING <ls_hotkey>.
+    loop at rt_hotkeys assigning <ls_hotkey>.
 
-      READ TABLE lt_user_defined_hotkeys ASSIGNING <ls_user_defined_hotkey>
-                                         WITH TABLE KEY action
-                                         COMPONENTS action = <ls_hotkey>-action.
-      IF sy-subrc = 0.
+      read table lt_user_defined_hotkeys assigning <ls_user_defined_hotkey>
+                                         with table key action
+                                         components action = <ls_hotkey>-action.
+      if sy-subrc = 0.
         <ls_hotkey>-hotkey = <ls_user_defined_hotkey>-hotkey.
-      ELSEIF lines( lt_user_defined_hotkeys ) > 0.
+      elseif lines( lt_user_defined_hotkeys ) > 0.
         " User removed the hotkey
-        DELETE TABLE rt_hotkeys FROM <ls_hotkey>.
-      ENDIF.
+        delete table rt_hotkeys from <ls_hotkey>.
+      endif.
 
-    ENDLOOP.
+    endloop.
 
-  ENDMETHOD.
+  endmethod.
 
 
-  METHOD footer.
+  method footer.
 
-    CREATE OBJECT ro_html.
+    create object ro_html.
 
     ro_html->add( '<div id="footer">' ).                    "#EC NOTEXT
 
@@ -198,53 +198,53 @@ CLASS ZCL_ABAPGIT_GUI_PAGE IMPLEMENTATION.
     ro_html->add( '</tr></table>' ).                        "#EC NOTEXT
     ro_html->add( '</div>' ).                               "#EC NOTEXT
 
-  ENDMETHOD.
+  endmethod.
 
 
-  METHOD get_default_hotkeys.
+  method get_default_hotkeys.
 
-    DATA: lt_page_hotkeys LIKE mt_hotkeys.
+    data: lt_page_hotkeys like mt_hotkeys.
 
     rt_default_hotkeys = get_global_hotkeys( ).
 
-    TRY.
-        CALL METHOD me->('ZIF_ABAPGIT_GUI_PAGE_HOTKEY~GET_HOTKEY_ACTIONS')
-          RECEIVING
+    try.
+        call method me->('ZIF_ABAPGIT_GUI_PAGE_HOTKEY~GET_HOTKEY_ACTIONS')
+          receiving
             rt_hotkey_actions = lt_page_hotkeys.
 
-        INSERT LINES OF lt_page_hotkeys INTO TABLE rt_default_hotkeys.
+        insert lines of lt_page_hotkeys into table rt_default_hotkeys.
 
-      CATCH cx_root.
+      catch cx_root.
         " Current page doesn't implement hotkey interface, do nothing
-    ENDTRY.
+    endtry.
 
-  ENDMETHOD.
+  endmethod.
 
 
-  METHOD get_events.
+  method get_events.
 
     " Return actions you need on your page.
 
-  ENDMETHOD.
+  endmethod.
 
 
-  METHOD get_global_hotkeys.
+  method get_global_hotkeys.
 
     " these are the global shortcuts active on all pages
 
-    DATA: ls_hotkey_action LIKE LINE OF rt_hotkey.
+    data: ls_hotkey_action like line of rt_hotkey.
 
     ls_hotkey_action-name   = |Show hotkeys help|.
     ls_hotkey_action-action = c_global_page_action-showhotkeys.
     ls_hotkey_action-hotkey = |?|.
-    INSERT ls_hotkey_action INTO TABLE rt_hotkey.
+    insert ls_hotkey_action into table rt_hotkey.
 
-  ENDMETHOD.
+  endmethod.
 
 
-  METHOD html_head.
+  method html_head.
 
-    CREATE OBJECT ro_html.
+    create object ro_html.
 
     ro_html->add( '<head>' ).                               "#EC NOTEXT
 
@@ -257,72 +257,74 @@ CLASS ZCL_ABAPGIT_GUI_PAGE IMPLEMENTATION.
 
     " Themes
     ro_html->add( '<link rel="stylesheet" type="text/css" href="css/theme-default.css">' ). " Theme basis
-    CASE mo_settings->get_ui_theme( ).
-      WHEN zcl_abapgit_settings=>c_ui_theme-dark.
+    case mo_settings->get_ui_theme( ).
+      when zcl_abapgit_settings=>c_ui_theme-dark.
         ro_html->add( '<link rel="stylesheet" type="text/css" href="css/theme-dark.css">' ).
-      WHEN zcl_abapgit_settings=>c_ui_theme-belize.
+      when zcl_abapgit_settings=>c_ui_theme-belize.
         ro_html->add( '<link rel="stylesheet" type="text/css" href="css/theme-belize-blue.css">' ).
-    ENDCASE.
+    endcase.
 
     ro_html->add( '<script type="text/javascript" src="js/common.js"></script>' ). "#EC NOTEXT
 
-    CASE mo_settings->get_icon_scaling( ). " Enforce icon scaling
-      WHEN mo_settings->c_icon_scaling-large.
+    case mo_settings->get_icon_scaling( ). " Enforce icon scaling
+      when mo_settings->c_icon_scaling-large.
         ro_html->add( '<style>.icon { font-size: 200% }</style>' ).
-      WHEN mo_settings->c_icon_scaling-small.
+      when mo_settings->c_icon_scaling-small.
         ro_html->add( '<style>.icon.large { font-size: inherit }</style>' ).
-    ENDCASE.
+    endcase.
+
+    ro_html->add( '<style>.myClass{ zoom: 70% }</style>' ).
 
     ro_html->add( '</head>' ).                              "#EC NOTEXT
 
-  ENDMETHOD.
+  endmethod.
 
 
-  METHOD insert_hotkeys_to_page.
+  method insert_hotkeys_to_page.
 
-    DATA: lv_json TYPE string.
+    data: lv_json type string.
 
-    FIELD-SYMBOLS: <ls_hotkey> LIKE LINE OF mt_hotkeys.
+    field-symbols: <ls_hotkey> like line of mt_hotkeys.
 
     lv_json = `{`.
 
-    LOOP AT mt_hotkeys ASSIGNING <ls_hotkey>.
+    loop at mt_hotkeys assigning <ls_hotkey>.
 
-      IF sy-tabix > 1.
+      if sy-tabix > 1.
         lv_json = lv_json && |,|.
-      ENDIF.
+      endif.
 
       lv_json = lv_json && |  "{ <ls_hotkey>-hotkey }" : "{ <ls_hotkey>-action }" |.
 
-    ENDLOOP.
+    endloop.
 
     lv_json = lv_json && `}`.
 
     io_html->add( |setKeyBindings({ lv_json });| ).
 
-  ENDMETHOD.
+  endmethod.
 
 
-  METHOD link_hints.
+  method link_hints.
 
-    DATA: lv_link_hint_key TYPE char01.
+    data: lv_link_hint_key type char01.
 
     lv_link_hint_key = mo_settings->get_link_hint_key( ).
 
-    IF mo_settings->get_link_hints_enabled( ) = abap_true AND lv_link_hint_key IS NOT INITIAL.
+    if mo_settings->get_link_hints_enabled( ) = abap_true and lv_link_hint_key is not initial.
 
       io_html->add( |activateLinkHints("{ lv_link_hint_key }");| ).
       io_html->add( |setInitialFocusWithQuerySelector('a span', true);| ).
       io_html->add( |enableArrowListNavigation();| ).
 
-    ENDIF.
+    endif.
 
-  ENDMETHOD.
+  endmethod.
 
 
-  METHOD redirect.
+  method redirect.
 
-    CREATE OBJECT ro_html.
+    create object ro_html.
 
     ro_html->add( '<!DOCTYPE html>' ).                      "#EC NOTEXT
     ro_html->add( '<html>' ).                               "#EC NOTEXT
@@ -331,57 +333,57 @@ CLASS ZCL_ABAPGIT_GUI_PAGE IMPLEMENTATION.
     ro_html->add( '</head>' ).                              "#EC NOTEXT
     ro_html->add( '</html>' ).                              "#EC NOTEXT
 
-  ENDMETHOD.
+  endmethod.
 
 
-  METHOD render_error_message_box.
+  method render_error_message_box.
 
     " You should remember that the we have to instantiate ro_html even
     " it's overwritten further down. Because ADD checks whether it's
     " bound.
-    CREATE OBJECT ro_html.
+    create object ro_html.
 
     " You should remember that we render the message panel only
     " if we have an error.
-    IF mx_error IS NOT BOUND.
-      RETURN.
-    ENDIF.
+    if mx_error is not bound.
+      return.
+    endif.
 
     ro_html = zcl_abapgit_gui_chunk_lib=>render_error_message_box( mx_error ).
 
     " You should remember that the exception viewer dispatches the events of
     " error message panel
-    CREATE OBJECT mo_exception_viewer
-      EXPORTING
+    create object mo_exception_viewer
+      exporting
         ix_error = mx_error.
 
     " You should remember that we render the message panel just once
     " for each exception/error text.
-    CLEAR:
+    clear:
       mx_error.
 
-  ENDMETHOD.
+  endmethod.
 
 
-  METHOD render_event_as_form.
+  method render_event_as_form.
 
-    CREATE OBJECT ro_html.
+    create object ro_html.
     ro_html->add(
       |<form id='form_{ is_event-name }' method={ is_event-method } action='sapevent:{ is_event-name }'></from>| ).
 
-  ENDMETHOD.
+  endmethod.
 
 
-  METHOD render_hotkey_overview.
+  method render_hotkey_overview.
 
     ro_html = zcl_abapgit_gui_chunk_lib=>render_hotkey_overview( me ).
 
-  ENDMETHOD.
+  endmethod.
 
 
-  METHOD scripts.
+  method scripts.
 
-    CREATE OBJECT ro_html.
+    create object ro_html.
 
     link_hints( ro_html ).
     insert_hotkeys_to_page( ro_html ).
@@ -396,12 +398,12 @@ CLASS ZCL_ABAPGIT_GUI_PAGE IMPLEMENTATION.
     ro_html->add( '  hotkeyDescription: "Command ..."' ).
     ro_html->add( '});' ).
 
-  ENDMETHOD.
+  endmethod.
 
 
-  METHOD title.
+  method title.
 
-    CREATE OBJECT ro_html.
+    create object ro_html.
 
     ro_html->add( '<div id="header">' ).                    "#EC NOTEXT
     ro_html->add( '<table class="w100"><tr>' ).             "#EC NOTEXT
@@ -414,110 +416,110 @@ CLASS ZCL_ABAPGIT_GUI_PAGE IMPLEMENTATION.
 
     ro_html->add( |<td><span class="page_title"> &#x25BA; { ms_control-page_title }</span></td>| ). "#EC NOTEXT
 
-    IF ms_control-page_menu IS BOUND.
+    if ms_control-page_menu is bound.
       ro_html->add( '<td class="right">' ).                 "#EC NOTEXT
       ro_html->add( ms_control-page_menu->render( iv_right = abap_true ) ).
       ro_html->add( '</td>' ).                              "#EC NOTEXT
-    ENDIF.
+    endif.
 
     ro_html->add( '</tr></table>' ).                        "#EC NOTEXT
     ro_html->add( '</div>' ).                               "#EC NOTEXT
 
-  ENDMETHOD.
+  endmethod.
 
 
-  METHOD zif_abapgit_gui_error_handler~handle_error.
+  method zif_abapgit_gui_error_handler~handle_error.
 
     mx_error = ix_error.
     rv_handled = abap_true.
 
-  ENDMETHOD.
+  endmethod.
 
 
-  METHOD zif_abapgit_gui_event_handler~on_event.
+  method zif_abapgit_gui_event_handler~on_event.
 
-    CASE iv_action.
-      WHEN zif_abapgit_definitions=>c_action-url.
+    case iv_action.
+      when zif_abapgit_definitions=>c_action-url.
 
         call_browser( iv_getdata ).
         ev_state = zcl_abapgit_gui=>c_event_state-no_more_act.
 
-      WHEN zif_abapgit_definitions=>c_action-goto_source.
+      when zif_abapgit_definitions=>c_action-goto_source.
 
-        IF mo_exception_viewer IS BOUND.
+        if mo_exception_viewer is bound.
           mo_exception_viewer->goto_source( ).
-        ENDIF.
+        endif.
         ev_state = zcl_abapgit_gui=>c_event_state-no_more_act.
 
-      WHEN zif_abapgit_definitions=>c_action-show_callstack.
+      when zif_abapgit_definitions=>c_action-show_callstack.
 
-        IF mo_exception_viewer IS BOUND.
+        if mo_exception_viewer is bound.
           mo_exception_viewer->show_callstack( ).
-        ENDIF.
+        endif.
         ev_state = zcl_abapgit_gui=>c_event_state-no_more_act.
 
-      WHEN zif_abapgit_definitions=>c_action-goto_message.
+      when zif_abapgit_definitions=>c_action-goto_message.
 
-        IF mo_exception_viewer IS BOUND.
+        if mo_exception_viewer is bound.
           mo_exception_viewer->goto_message( ).
-        ENDIF.
+        endif.
         ev_state = zcl_abapgit_gui=>c_event_state-no_more_act.
 
-      WHEN OTHERS.
+      when others.
 
         ev_state = zcl_abapgit_gui=>c_event_state-not_handled.
 
-    ENDCASE.
+    endcase.
 
-  ENDMETHOD.
+  endmethod.
 
 
-  METHOD zif_abapgit_gui_renderable~render.
+  method zif_abapgit_gui_renderable~render.
 
-    DATA: lo_script TYPE REF TO zcl_abapgit_html,
-          lt_events TYPE tt_events.
+    data: lo_script type ref to zcl_abapgit_html,
+          lt_events type tt_events.
 
-    FIELD-SYMBOLS:
-          <ls_event> LIKE LINE OF lt_events.
+    field-symbols:
+          <ls_event> like line of lt_events.
 
     " Redirect
-    IF ms_control-redirect_url IS NOT INITIAL.
+    if ms_control-redirect_url is not initial.
       ri_html = redirect( ).
-      RETURN.
-    ENDIF.
+      return.
+    endif.
 
     mt_hotkeys = define_hotkeys( ).
 
     " Real page
-    CREATE OBJECT ri_html TYPE zcl_abapgit_html.
+    create object ri_html type zcl_abapgit_html.
 
     ri_html->add( '<!DOCTYPE html>' ).                      "#EC NOTEXT
-    ri_html->add( '<html>' ).                               "#EC NOTEXT
+    ri_html->add( '<html class="myClass">' ).               "#EC NOTEXT
     ri_html->add( html_head( ) ).
-    ri_html->add( '<body>' ).                               "#EC NOTEXT
+    ri_html->add( '<body>' ).                                "#EC NOTEXT
     ri_html->add( title( ) ).
     ri_html->add( render_hotkey_overview( ) ).
     ri_html->add( render_content( ) ).
     ri_html->add( render_error_message_box( ) ).
 
     lt_events = me->get_events( ).
-    LOOP AT lt_events ASSIGNING <ls_event>.
+    loop at lt_events assigning <ls_event>.
       ri_html->add( render_event_as_form( <ls_event> ) ).
-    ENDLOOP.
+    endloop.
 
     ri_html->add( footer( ) ).
     ri_html->add( '</body>' ).                              "#EC NOTEXT
 
     lo_script = scripts( ).
 
-    IF lo_script IS BOUND AND lo_script->is_empty( ) = abap_false.
+    if lo_script is bound and lo_script->is_empty( ) = abap_false.
       ri_html->add( '<script type="text/javascript">' ).
       ri_html->add( lo_script ).
       ri_html->add( 'confirmInitialized();' ).
       ri_html->add( '</script>' ).
-    ENDIF.
+    endif.
 
     ri_html->add( '</html>' ).                              "#EC NOTEXT
 
-  ENDMETHOD.
-ENDCLASS.
+  endmethod.
+endclass.
